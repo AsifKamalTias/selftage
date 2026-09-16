@@ -1,4 +1,10 @@
-/** Serializes rows to RFC 4180 CSV. Cells that look like formulas are prefixed to prevent CSV injection. */
+const NUMERIC = /^[-+]?\d+(\.\d+)?$/;
+const FORMULA_START = /^[=+\-@\t\r]/;
+
+/**
+ * Serializes rows to RFC 4180 CSV. Text cells that could be read as formulas are
+ * prefixed with an apostrophe to prevent CSV injection; plain numbers are left intact.
+ */
 export function toCsv(rows: (string | number | null | undefined)[][]): string {
   return rows
     .map((row) =>
@@ -6,7 +12,9 @@ export function toCsv(rows: (string | number | null | undefined)[][]): string {
         .map((cell) => {
           if (cell == null) return '';
           let text = String(cell);
-          if (typeof cell === 'string' && /^[=+\-@\t\r]/.test(text)) text = `'${text}`;
+          if (typeof cell === 'string' && !NUMERIC.test(text) && FORMULA_START.test(text)) {
+            text = `'${text}`;
+          }
           return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
         })
         .join(',')
