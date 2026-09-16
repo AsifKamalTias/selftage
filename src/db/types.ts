@@ -1,0 +1,121 @@
+/**
+ * Domain models. SQL queries alias snake_case columns to these camelCase names,
+ * so rows can be returned without a mapping step. Amounts are integer minor units
+ * (see `src/lib/money.ts`), dates are local `YYYY-MM-DD` strings.
+ */
+
+export type EntryKind = 'income' | 'expense';
+
+export const ENTRY_KINDS: readonly EntryKind[] = ['expense', 'income'];
+
+/** An income or expense "type" in the UI (e.g. Salary, Groceries). */
+export interface Category {
+  id: string;
+  kind: EntryKind;
+  name: string;
+  icon: string;
+  color: string;
+  createdAt: string;
+  updatedAt: string;
+  /** Number of transactions referencing this row (list queries only). */
+  usageCount?: number;
+}
+
+/** Who money came from or went to (e.g. Employer, Supermarket). */
+export interface Source {
+  id: string;
+  kind: EntryKind;
+  name: string;
+  icon: string;
+  color: string;
+  createdAt: string;
+  updatedAt: string;
+  usageCount?: number;
+}
+
+export interface AccountType {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+  createdAt: string;
+  updatedAt: string;
+  accountCount?: number;
+}
+
+export interface Account {
+  id: string;
+  accountTypeId: string;
+  accountTypeName: string;
+  name: string;
+  accountNumber: string | null;
+  note: string | null;
+  icon: string;
+  color: string;
+  openingBalance: number;
+  isArchived: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AccountWithBalance extends Account {
+  balance: number;
+  totalIncome: number;
+  totalExpense: number;
+  transactionCount: number;
+}
+
+export interface Attachment {
+  id: string;
+  transactionId: string;
+  uri: string;
+  name: string;
+  mimeType: string | null;
+  size: number | null;
+  createdAt: string;
+}
+
+export interface Transaction {
+  id: string;
+  kind: EntryKind;
+  amount: number;
+  title: string;
+  note: string | null;
+  date: string;
+  categoryId: string;
+  categoryName: string;
+  categoryIcon: string;
+  categoryColor: string;
+  sourceId: string | null;
+  sourceName: string | null;
+  accountId: string;
+  accountName: string;
+  attachmentCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TransactionDetail extends Transaction {
+  attachments: Attachment[];
+}
+
+export type LedgerEntryType = 'opening' | EntryKind;
+
+export interface LedgerEntry {
+  id: string;
+  accountId: string;
+  accountName: string;
+  transactionId: string | null;
+  entryType: LedgerEntryType;
+  date: string;
+  description: string;
+  categoryName: string | null;
+  sourceName: string | null;
+  /** Money in. */
+  debit: number;
+  /** Money out. */
+  credit: number;
+  /** Running balance after this entry within the current ledger view. */
+  balance: number;
+  createdAt: string;
+}
