@@ -1,7 +1,7 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 import { z } from 'zod';
 
-import { DomainError, runInTransaction } from '@/db/client';
+import { assertUniqueName, DomainError, runInTransaction } from '@/db/client';
 import type { AccountType, AccountWithBalance } from '@/db/types';
 import { nowTimestamp, toISODate } from '@/lib/date';
 import { newId } from '@/lib/id';
@@ -38,6 +38,7 @@ export async function createAccountType(
   input: AccountTypeInput
 ): Promise<string> {
   const data = accountTypeInputSchema.parse(input);
+  await assertUniqueName(db, 'account_types', data.name);
   const id = newId();
   const now = nowTimestamp();
   await db.runAsync(
@@ -54,6 +55,7 @@ export async function updateAccountType(
   input: AccountTypeInput
 ): Promise<void> {
   const data = accountTypeInputSchema.parse(input);
+  await assertUniqueName(db, 'account_types', data.name, { excludeId: id });
   await db.runAsync(
     'UPDATE account_types SET name = ?, icon = ?, color = ?, updated_at = ? WHERE id = ?',
     [data.name, data.icon, data.color, nowTimestamp(), id]
@@ -155,6 +157,7 @@ async function writeOpeningEntry(
 
 export async function createAccount(db: SQLiteDatabase, input: AccountInput): Promise<string> {
   const data = accountInputSchema.parse(input);
+  await assertUniqueName(db, 'accounts', data.name);
   const id = newId();
   const now = nowTimestamp();
   await runInTransaction(db, async (tx) => {
@@ -186,6 +189,7 @@ export async function updateAccount(
   input: AccountInput
 ): Promise<void> {
   const data = accountInputSchema.parse(input);
+  await assertUniqueName(db, 'accounts', data.name, { excludeId: id });
   await runInTransaction(db, async (tx) => {
     const existing = await tx.getFirstAsync<{ createdAt: string }>(
       'SELECT created_at AS createdAt FROM accounts WHERE id = ?',

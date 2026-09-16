@@ -1,7 +1,7 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 import { z } from 'zod';
 
-import { DomainError } from '@/db/client';
+import { assertUniqueName, DomainError } from '@/db/client';
 import type { Category, EntryKind, Source } from '@/db/types';
 import { nowTimestamp } from '@/lib/date';
 import { newId } from '@/lib/id';
@@ -67,6 +67,7 @@ export async function createCatalogItem(
   input: CatalogInput
 ): Promise<string> {
   const data = catalogInputSchema.parse(input);
+  await assertUniqueName(db, table, data.name, { scope: { kind: data.kind } });
   const id = newId();
   const now = nowTimestamp();
   await db.runAsync(
@@ -85,6 +86,9 @@ export async function updateCatalogItem(
   input: Omit<CatalogInput, 'kind'>
 ): Promise<void> {
   const data = catalogInputSchema.omit({ kind: true }).parse(input);
+  const current = await getCatalogItem(db, table, id);
+  if (!current) throw new DomainError('This item no longer exists.');
+  await assertUniqueName(db, table, data.name, { scope: { kind: current.kind }, excludeId: id });
   await db.runAsync(
     `UPDATE ${table} SET name = ?, icon = ?, color = ?, updated_at = ? WHERE id = ?`,
     [data.name, data.icon, data.color, nowTimestamp(), id]
