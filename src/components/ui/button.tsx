@@ -45,7 +45,7 @@ function variantColors(variant: ButtonVariant, colors: ThemeColors, tint?: strin
       return { background: colors.dangerMuted, foreground: colors.danger, border: 'transparent' };
     default:
       return {
-        background: tint ?? colors.primary,
+        background: tint ?? colors.primaryButton,
         foreground: colors.onPrimary,
         border: 'transparent',
       };

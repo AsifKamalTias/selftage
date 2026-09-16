@@ -32,6 +32,7 @@ export function Icon({ name, size = 20, color = 'text', style }: IconProps) {
       style={style}
       accessibilityElementsHidden
       importantForAccessibility="no"
+      aria-hidden
     />
   );
 }

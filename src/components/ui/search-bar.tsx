@@ -54,6 +54,8 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
+    // Web inputs have an intrinsic width; allow them to shrink inside flex rows.
+    minWidth: 0,
     height: '100%',
     paddingVertical: 0,
     outlineStyle: 'none',

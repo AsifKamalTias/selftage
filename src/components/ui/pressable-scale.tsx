@@ -1,4 +1,10 @@
-import { Pressable, type PressableProps, type StyleProp, type ViewStyle } from 'react-native';
+import {
+  Pressable,
+  StyleSheet,
+  type PressableProps,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -48,8 +54,15 @@ export function PressableScale({
         if (haptic) haptics.selection();
         onPress?.(event);
       }}
-      style={[animatedStyle, disabled && { opacity: 0.5 }, style]}
+      style={[animatedStyle, disabled && !!(onPress || rest.onLongPress) && styles.disabled, style]}
       {...rest}
     />
   );
 }
+
+const styles = StyleSheet.create({
+  // Only actionable controls look disabled; static rows reuse this component for layout.
+  disabled: {
+    opacity: 0.5,
+  },
+});

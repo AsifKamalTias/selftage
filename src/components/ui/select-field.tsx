@@ -137,6 +137,7 @@ export function SelectField({
                 haptic
                 scaleTo={0.98}
                 accessibilityRole="radio"
+                accessibilityLabel={item.label}
                 accessibilityState={{ selected: isSelected }}
                 onPress={() => {
                   onChange(item.value || null);

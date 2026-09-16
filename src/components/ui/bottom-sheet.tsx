@@ -8,7 +8,7 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import Animated, { SlideInDown } from 'react-native-reanimated';
+import Animated, { Easing, SlideInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useTheme } from '@/theme/theme-provider';
@@ -63,7 +63,7 @@ export function BottomSheet({
           pointerEvents="box-none">
           {visible ? (
             <Animated.View
-              entering={SlideInDown.springify().damping(22).stiffness(220)}
+              entering={SlideInDown.duration(240).easing(Easing.out(Easing.cubic))}
               accessibilityViewIsModal
               style={[
                 styles.sheet,

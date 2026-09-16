@@ -24,7 +24,7 @@ export interface TextFieldProps extends Omit<TextInputProps, 'style'> {
   right?: ReactNode;
   containerStyle?: StyleProp<ViewStyle>;
   inputRef?: Ref<TextInput>;
-  /** Large, bold input for the amount field. */
+  /** `xl` is a large, borderless input for hero amounts (the parent provides the frame). */
   size?: 'md' | 'xl';
 }
 
@@ -61,9 +61,10 @@ export function TextField({
           {
             borderColor,
             backgroundColor: colors.surface,
-            minHeight: isXL ? 72 : 50,
+            minHeight: 50,
             alignItems: multiline ? 'flex-start' : 'center',
           },
+          isXL && styles.fieldXL,
         ]}>
         {icon ? (
           <Icon
@@ -75,7 +76,7 @@ export function TextField({
         ) : null}
         {prefix ? (
           <Text
-            variant={isXL ? 'title' : 'body'}
+            variant={isXL ? 'display' : 'body'}
             weight={isXL ? 'bold' : 'medium'}
             color="textMuted">
             {prefix}
@@ -100,7 +101,7 @@ export function TextField({
           }}
           style={[
             styles.input,
-            isXL ? typography.title : typography.body,
+            isXL ? typography.display : typography.body,
             {
               color: colors.text,
               fontFamily: isXL ? fonts.bold : fonts.regular,
@@ -138,10 +139,18 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
+    // Web inputs have an intrinsic width; allow them to shrink inside flex rows.
+    minWidth: 0,
     alignSelf: 'stretch',
     // Removes the focus outline on web; the border already shows focus.
     outlineStyle: 'none',
   } as object,
+  fieldXL: {
+    borderWidth: 0,
+    backgroundColor: 'transparent',
+    minHeight: 56,
+    paddingHorizontal: 0,
+  },
   multilineIcon: {
     marginTop: spacing.md + 1,
   },

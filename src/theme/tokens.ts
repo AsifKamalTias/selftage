@@ -11,6 +11,8 @@ export interface ThemeColors {
   textMuted: string;
   primary: string;
   primaryMuted: string;
+  /** Filled button background; deeper than `primary` in dark mode for text contrast. */
+  primaryButton: string;
   onPrimary: string;
   income: string;
   incomeMuted: string;
@@ -40,6 +42,7 @@ export const lightColors: ThemeColors = {
   textMuted: '#8A94A6',
   primary: '#4F46E5',
   primaryMuted: '#EEF0FF',
+  primaryButton: '#4F46E5',
   onPrimary: '#FFFFFF',
   income: '#059669',
   incomeMuted: '#E7F8F1',
@@ -67,6 +70,7 @@ export const darkColors: ThemeColors = {
   textMuted: '#6B7489',
   primary: '#7B80F7',
   primaryMuted: 'rgba(123, 128, 247, 0.16)',
+  primaryButton: '#5558E8',
   onPrimary: '#FFFFFF',
   income: '#34D399',
   incomeMuted: 'rgba(52, 211, 153, 0.14)',
