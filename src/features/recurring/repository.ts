@@ -153,7 +153,7 @@ export async function updateRecurringRule(
   const data = recurringInputSchema.parse(input);
   await assertReferences(db, data);
   const existing = await getRecurringRule(db, id);
-  if (!existing) throw new DomainError('This recurring entry no longer exists.');
+  if (!existing) throw new DomainError('This recurring no longer exists.');
 
   const nextDate = existing.lastRunDate
     ? nextOccurrenceAfter(
@@ -197,7 +197,7 @@ export async function setRecurringActive(
   today = todayISO()
 ): Promise<void> {
   const rule = await getRecurringRule(db, id);
-  if (!rule) throw new DomainError('This recurring entry no longer exists.');
+  if (!rule) throw new DomainError('This recurring no longer exists.');
   const nextDate = isActive
     ? firstOccurrenceOnOrAfter(
         rule.startDate,

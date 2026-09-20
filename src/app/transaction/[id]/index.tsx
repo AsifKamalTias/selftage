@@ -128,12 +128,12 @@ export default function TransactionDetailScreen() {
           {data.recurringId ? (
             <ListRow
               icon="repeat"
-              title={data.recurringName ?? 'Recurring entry'}
-              subtitle="Posted automatically by a recurring entry"
+              title={data.recurringName ?? 'Recurring'}
+              subtitle="Posted automatically by this recurring"
               onPress={() =>
                 router.push({ pathname: '/recurring/form', params: { id: data.recurringId! } })
               }
-              accessibilityHint="Opens the recurring entry"
+              accessibilityHint="Opens the recurring"
             />
           ) : null}
           {data.goalId ? (

@@ -50,7 +50,7 @@ export default function RecurringFormScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const { data, isPending } = useRecurringRule(id);
   if (id && isPending) return <ScreenLoader />;
-  if (id && !data) return <EmptyState icon="search-outline" title="Recurring entry not found" />;
+  if (id && !data) return <EmptyState icon="search-outline" title="Recurring not found" />;
   return <RecurringForm key={data?.id ?? 'new'} existing={data ?? null} />;
 }
 
@@ -133,12 +133,12 @@ function RecurringForm({ existing }: { existing: RecurringRule | null }) {
           startDate: startDate!,
         },
       });
-      toast.success(existing ? 'Recurring entry updated' : 'Recurring entry added');
+      toast.success(existing ? 'Recurring updated' : 'Recurring added');
       goBack('/recurring');
       // Post anything already due (including a start date in the past).
       await runRecurring();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Could not save the recurring entry');
+      toast.error(error instanceof Error ? error.message : 'Could not save this recurring');
     }
   };
 
@@ -146,11 +146,11 @@ function RecurringForm({ existing }: { existing: RecurringRule | null }) {
     if (!existing) return;
     try {
       await toggle.mutateAsync({ id: existing.id, isActive: !existing.isActive });
-      toast.success(existing.isActive ? 'Recurring entry paused' : 'Recurring entry resumed');
+      toast.success(existing.isActive ? 'Recurring paused' : 'Recurring resumed');
       goBack('/recurring');
       if (!existing.isActive) await runRecurring();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Could not update the entry');
+      toast.error(error instanceof Error ? error.message : 'Could not update this recurring');
     }
   };
 
@@ -165,10 +165,10 @@ function RecurringForm({ existing }: { existing: RecurringRule | null }) {
     if (!ok) return;
     try {
       await remove.mutateAsync(existing.id);
-      toast.success('Recurring entry deleted');
+      toast.success('Recurring deleted');
       goBack('/recurring');
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Could not delete the entry');
+      toast.error(error instanceof Error ? error.message : 'Could not delete this recurring');
     }
   };
 
@@ -178,16 +178,14 @@ function RecurringForm({ existing }: { existing: RecurringRule | null }) {
       safeBottom
       footer={
         <Button
-          title={existing ? 'Save changes' : 'Add recurring entry'}
+          title={existing ? 'Save changes' : 'Add recurring'}
           icon="checkmark"
           tint={tint}
           loading={save.isPending}
           onPress={submit}
         />
       }>
-      <Stack.Screen
-        options={{ title: existing ? 'Edit recurring entry' : 'New recurring entry' }}
-      />
+      <Stack.Screen options={{ title: existing ? 'Edit recurring' : 'New recurring' }} />
 
       <SegmentedControl
         value={kind}
@@ -361,7 +359,7 @@ function RecurringForm({ existing }: { existing: RecurringRule | null }) {
             onPress={handleToggle}
           />
           <Button
-            title="Delete recurring entry"
+            title="Delete recurring"
             icon="trash-outline"
             variant="danger"
             loading={remove.isPending}

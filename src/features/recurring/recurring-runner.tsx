@@ -34,7 +34,7 @@ export function useRecurringRun() {
         const [first] = result.created;
         toast.success(
           result.created.length > 1
-            ? `${result.created.length} recurring entries added`
+            ? `${result.created.length} recurring added`
             : `${first.name} added · ${formatAmount(first.amount)}`
         );
         presentBudgetAlerts(result.budgetAlerts);

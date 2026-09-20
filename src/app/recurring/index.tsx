@@ -34,7 +34,7 @@ export default function RecurringScreen() {
             <IconButton
               icon="add"
               variant="plain"
-              accessibilityLabel="Add recurring entry"
+              accessibilityLabel="Add recurring"
               onPress={() => openForm()}
             />
           ),
@@ -46,9 +46,9 @@ export default function RecurringScreen() {
       ) : rules.length === 0 ? (
         <EmptyState
           icon="repeat"
-          title="No recurring entries"
+          title="No recurring yet"
           message="Set up salary, rent, subscriptions or any entry that repeats. They are added automatically on their date — daily, weekly, monthly or yearly."
-          action={{ label: 'Add recurring entry', icon: 'add', onPress: () => openForm() }}
+          action={{ label: 'Add recurring', icon: 'add', onPress: () => openForm() }}
         />
       ) : (
         <>
@@ -56,7 +56,7 @@ export default function RecurringScreen() {
             <Icon name="repeat" size={22} color="primary" />
             <Text variant="callout" style={styles.summaryText}>
               {active.length === 0
-                ? 'All recurring entries are paused.'
+                ? 'Everything recurring is paused.'
                 : upcoming
                   ? `${active.length} active · next is ${upcoming.name} on ${formatDate(
                       upcoming.nextDate > todayISO() ? upcoming.nextDate : todayISO(),
@@ -86,12 +86,7 @@ export default function RecurringScreen() {
             </Section>
           ) : null}
 
-          <Button
-            title="Add recurring entry"
-            icon="add"
-            variant="secondary"
-            onPress={() => openForm()}
-          />
+          <Button title="Add recurring" icon="add" variant="secondary" onPress={() => openForm()} />
           <Text variant="caption" color="textMuted" align="center">
             Entries missed while the app was closed are added the next time you open it.
           </Text>
