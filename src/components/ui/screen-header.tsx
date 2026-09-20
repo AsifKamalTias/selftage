@@ -9,14 +9,18 @@ import { Text } from './text';
 export function ScreenHeader({
   title,
   subtitle,
+  left,
   right,
 }: {
   title: string;
   subtitle?: string;
+  /** Leading control, typically the menu button. */
+  left?: ReactNode;
   right?: ReactNode;
 }) {
   return (
     <View style={styles.row}>
+      {left}
       <View style={styles.titles}>
         {subtitle ? (
           <Text variant="caption" color="textSecondary">

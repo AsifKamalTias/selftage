@@ -8,6 +8,7 @@ import { Chip } from '@/components/ui/chip';
 import { EmptyState } from '@/components/ui/empty-state';
 import { HorizontalScroll } from '@/components/ui/horizontal-scroll';
 import { ListSkeleton, Loader, Skeleton } from '@/components/ui/loader';
+import { MenuButton } from '@/components/navigation/app-menu';
 import { ScreenHeader } from '@/components/ui/screen-header';
 import { SearchBar } from '@/components/ui/search-bar';
 import { SegmentedControl } from '@/components/ui/segmented-control';
@@ -70,6 +71,7 @@ export default function LedgerScreen() {
       <ScreenHeader
         title="Ledger"
         subtitle="Every posting with running balance"
+        left={<MenuButton />}
         right={
           <Button
             title="Report"

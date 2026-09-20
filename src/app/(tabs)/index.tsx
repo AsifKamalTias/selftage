@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { RefreshControl, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
+import { MenuButton } from '@/components/navigation/app-menu';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/loader';
@@ -46,6 +47,7 @@ function Header() {
 
   return (
     <View style={styles.header}>
+      <MenuButton />
       <View style={styles.headerText}>
         <Text variant="callout" color="textSecondary">
           {greetingForNow()}

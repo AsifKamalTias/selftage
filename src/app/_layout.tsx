@@ -12,6 +12,7 @@ import { Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { AppErrorBoundary } from '@/components/app-error-boundary';
+import { AppMenuProvider } from '@/components/navigation/app-menu';
 import { AnimatedSplash } from '@/components/brand/animated-splash';
 import { ToastProvider } from '@/components/ui/toast';
 import { DATABASE_NAME } from '@/db/client';
@@ -89,8 +90,10 @@ function ThemedApp({ onReady }: { onReady: (ready: boolean) => void }) {
   return (
     <ThemeProvider mode={settings.themeMode}>
       <ToastProvider>
-        <RecurringRunner />
-        <RootStack />
+        <AppMenuProvider>
+          <RecurringRunner />
+          <RootStack />
+        </AppMenuProvider>
       </ToastProvider>
     </ThemeProvider>
   );

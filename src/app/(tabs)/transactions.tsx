@@ -10,6 +10,7 @@ import { Chip } from '@/components/ui/chip';
 import { EmptyState } from '@/components/ui/empty-state';
 import { HorizontalScroll } from '@/components/ui/horizontal-scroll';
 import { ListSkeleton, Loader } from '@/components/ui/loader';
+import { MenuButton } from '@/components/navigation/app-menu';
 import { ScreenHeader } from '@/components/ui/screen-header';
 import { SearchBar } from '@/components/ui/search-bar';
 import { SegmentedControl } from '@/components/ui/segmented-control';
@@ -156,6 +157,7 @@ export default function TransactionsScreen() {
       <ScreenHeader
         title="History"
         subtitle="Income & expenses"
+        left={<MenuButton />}
         right={
           <View>
             <IconButton

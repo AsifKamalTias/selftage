@@ -10,6 +10,7 @@ import { Icon } from '@/components/ui/icon';
 import { ListGroup, ListRow } from '@/components/ui/list-row';
 import { PressableScale } from '@/components/ui/pressable-scale';
 import { Screen } from '@/components/ui/screen';
+import { MenuButton } from '@/components/navigation/app-menu';
 import { ScreenHeader } from '@/components/ui/screen-header';
 import { Section } from '@/components/ui/section';
 import { SegmentedControl } from '@/components/ui/segmented-control';
@@ -17,10 +18,7 @@ import { SelectField } from '@/components/ui/select-field';
 import { Text } from '@/components/ui/text';
 import { TextField } from '@/components/ui/text-field';
 import { useToast } from '@/components/ui/toast';
-import { useAccounts, useAccountTypes } from '@/features/accounts/hooks';
-import { useCatalog } from '@/features/catalog/hooks';
-import { useBudgetStatuses } from '@/features/budgets/hooks';
-import { useRecurringRules } from '@/features/recurring/hooks';
+import { useAccounts } from '@/features/accounts/hooks';
 import { useExportTransactions, useResetAllData } from '@/features/settings/hooks';
 import { useSettings } from '@/features/settings/settings-provider';
 import type { ThemeMode } from '@/features/settings/settings';
@@ -132,11 +130,6 @@ export default function SettingsScreen() {
   const [dateSheet, setDateSheet] = useState(false);
   const [weekSheet, setWeekSheet] = useState(false);
   const accounts = useAccounts({ includeArchived: false });
-  const accountTypes = useAccountTypes();
-  const categories = useCatalog('categories');
-  const sources = useCatalog('sources');
-  const budgets = useBudgetStatuses({ includeInactive: true });
-  const recurring = useRecurringRules();
   const exportTransactions = useExportTransactions();
   const reset = useResetAllData();
 
@@ -174,24 +167,9 @@ export default function SettingsScreen() {
     }
   };
 
-  const countLabel = (count: number | undefined, noun: string) =>
-    count == null ? '' : `${count} ${noun}${count === 1 ? '' : 's'}`;
-
-  const activeRecurring = (recurring.data ?? []).filter((rule) => rule.isActive).length;
-  const recurringSubtitle = recurring.data?.length
-    ? `${recurring.data.length} ${recurring.data.length === 1 ? 'entry' : 'entries'} · ${activeRecurring} active`
-    : 'Add entries that repeat automatically';
-
-  const attention = (budgets.data ?? []).filter((b) => b.isActive && b.health !== 'ok').length;
-  const budgetSubtitle = budgets.data?.length
-    ? attention
-      ? `${countLabel(budgets.data.length, 'budget')} · ${attention} need${attention === 1 ? 's' : ''} attention`
-      : countLabel(budgets.data.length, 'budget')
-    : 'Set daily, weekly or monthly limits';
-
   return (
     <Screen safeTop keyboard>
-      <ScreenHeader title="Settings" subtitle="Preferences & data" />
+      <ScreenHeader title="Settings" subtitle="Preferences & data" left={<MenuButton />} />
 
       <Card style={styles.profile}>
         <TextField
@@ -261,53 +239,6 @@ export default function SettingsScreen() {
             }))}
           />
         </Card>
-      </Section>
-
-      <Section title="Manage">
-        <ListGroup>
-          <ListRow
-            icon="repeat"
-            iconColor="#0EA5E9"
-            title="Recurring entries"
-            subtitle={recurringSubtitle}
-            onPress={() => router.push('/recurring')}
-          />
-          <ListRow
-            icon="speedometer-outline"
-            iconColor="#6366F1"
-            title="Budgets"
-            subtitle={budgetSubtitle}
-            onPress={() => router.push('/budgets')}
-          />
-          <ListRow
-            icon="pricetags-outline"
-            iconColor="#F97316"
-            title="Income & expense types"
-            subtitle={countLabel(categories.data?.length, 'type')}
-            onPress={() => router.push('/manage/types')}
-          />
-          <ListRow
-            icon="people-outline"
-            iconColor="#EC4899"
-            title="Sources"
-            subtitle={countLabel(sources.data?.length, 'source')}
-            onPress={() => router.push('/manage/sources')}
-          />
-          <ListRow
-            icon="wallet-outline"
-            iconColor="#10B981"
-            title="Accounts"
-            subtitle={countLabel(accounts.data?.length, 'active account')}
-            onPress={() => router.push('/manage/accounts')}
-          />
-          <ListRow
-            icon="albums-outline"
-            iconColor="#3B82F6"
-            title="Account types"
-            subtitle={countLabel(accountTypes.data?.length, 'type')}
-            onPress={() => router.push('/manage/account-types')}
-          />
-        </ListGroup>
       </Section>
 
       <Section title="Reports & data">
