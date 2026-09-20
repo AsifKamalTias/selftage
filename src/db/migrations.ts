@@ -110,6 +110,24 @@ CREATE INDEX idx_ledger_account_date ON ledger_entries (account_id, date, create
 CREATE INDEX idx_ledger_date ON ledger_entries (date, created_at);
 `;
 
+const SCHEMA_V2 = `
+-- Spending limits. A NULL category_id is the overall budget for that period.
+CREATE TABLE budgets (
+  id TEXT PRIMARY KEY NOT NULL,
+  category_id TEXT REFERENCES categories (id) ON DELETE CASCADE,
+  period TEXT NOT NULL CHECK (period IN ('daily', 'weekly', 'monthly')),
+  amount INTEGER NOT NULL CHECK (amount > 0),
+  -- Percentage of the limit at which the "close to limit" warning starts.
+  warn_at INTEGER NOT NULL DEFAULT 80 CHECK (warn_at BETWEEN 1 AND 100),
+  is_active INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+-- One budget per period per scope; '*' stands in for the overall budget.
+CREATE UNIQUE INDEX idx_budgets_scope ON budgets (period, IFNULL(category_id, '*'));
+CREATE INDEX idx_budgets_category ON budgets (category_id);
+`;
+
 /**
  * Append-only list. Never edit a shipped migration; add a new version instead.
  * Each migration runs in its own transaction together with the version bump.
@@ -120,6 +138,12 @@ const MIGRATIONS: readonly Migration[] = [
     up: async (tx) => {
       await tx.execAsync(SCHEMA_V1);
       await seedDefaults(tx);
+    },
+  },
+  {
+    version: 2,
+    up: async (tx) => {
+      await tx.execAsync(SCHEMA_V2);
     },
   },
 ];

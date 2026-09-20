@@ -7,6 +7,11 @@ import {
   persistAttachment,
 } from '@/features/attachments/storage';
 import { formatFileSize, type PickedFile } from '@/features/attachments/types';
+import {
+  budgetAlertsSince,
+  budgetHealthSnapshot,
+  type BudgetAlert,
+} from '@/features/budgets/alerts';
 import { newId } from '@/lib/id';
 
 import {
@@ -51,18 +56,25 @@ async function persistAll(files: PickedFile[], transactionId: string): Promise<N
   return saved;
 }
 
+export interface TransactionSaveResult {
+  id: string;
+  /** Budgets pushed into warning or over their limit by this change. */
+  budgetAlerts: BudgetAlert[];
+}
+
 export async function createTransaction(
   db: SQLiteDatabase,
   input: TransactionInput,
   files: PickedFile[]
-): Promise<string> {
+): Promise<TransactionSaveResult> {
   const id = newId();
   let saved: NewAttachment[] = [];
   try {
     const data = await normalize(db, input);
+    const before = await budgetHealthSnapshot(db);
     saved = await persistAll(files, id);
     await insertTransaction(db, id, data, saved);
-    return id;
+    return { id, budgetAlerts: await budgetAlertsSince(db, before) };
   } catch (error) {
     deleteAttachmentFiles(saved.map((s) => s.uri));
     throw toFriendlyError(error);
@@ -74,16 +86,18 @@ export async function updateTransaction(
   id: string,
   input: TransactionInput,
   changes: { added: PickedFile[]; removedIds: string[] }
-): Promise<void> {
+): Promise<TransactionSaveResult> {
   let saved: NewAttachment[] = [];
   try {
     const data = await normalize(db, input);
+    const before = await budgetHealthSnapshot(db);
     saved = await persistAll(changes.added, id);
     const removed = await modifyTransaction(db, id, data, {
       added: saved,
       removedIds: changes.removedIds,
     });
     deleteAttachmentFiles(removed.map((a) => a.uri));
+    return { id, budgetAlerts: await budgetAlertsSince(db, before) };
   } catch (error) {
     deleteAttachmentFiles(saved.map((s) => s.uri));
     throw toFriendlyError(error);

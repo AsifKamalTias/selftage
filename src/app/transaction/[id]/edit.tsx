@@ -3,6 +3,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { EmptyState } from '@/components/ui/empty-state';
 import { ScreenLoader } from '@/components/ui/loader';
 import { useToast } from '@/components/ui/toast';
+import { useBudgetAlertPresenter } from '@/features/budgets/use-budget-alerts';
 import { TransactionForm } from '@/features/transactions/components/transaction-form';
 import { useTransaction, useUpdateTransaction } from '@/features/transactions/hooks';
 
@@ -11,6 +12,7 @@ export default function EditTransactionScreen() {
   const { data, isPending } = useTransaction(id);
   const update = useUpdateTransaction();
   const toast = useToast();
+  const presentBudgetAlerts = useBudgetAlertPresenter();
 
   if (isPending) return <ScreenLoader />;
   if (!data) {
@@ -29,8 +31,14 @@ export default function EditTransactionScreen() {
       initial={data}
       submitLabel="Save changes"
       onSubmit={async ({ input, added, removedIds }) => {
-        await update.mutateAsync({ id: data.id, input, added, removedIds });
+        const { budgetAlerts } = await update.mutateAsync({
+          id: data.id,
+          input,
+          added,
+          removedIds,
+        });
         toast.success('Transaction updated');
+        presentBudgetAlerts(budgetAlerts);
       }}
     />
   );

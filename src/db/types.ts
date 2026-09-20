@@ -119,3 +119,41 @@ export interface LedgerEntry {
   balance: number;
   createdAt: string;
 }
+
+export type BudgetPeriod = 'daily' | 'weekly' | 'monthly';
+
+export const BUDGET_PERIODS: readonly BudgetPeriod[] = ['daily', 'weekly', 'monthly'];
+
+/** A spending limit. `categoryId === null` is the overall limit for that period. */
+export interface Budget {
+  id: string;
+  categoryId: string | null;
+  categoryName: string | null;
+  categoryIcon: string | null;
+  categoryColor: string | null;
+  period: BudgetPeriod;
+  amount: number;
+  /** Percentage of `amount` at which the warning starts. */
+  warnAt: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type BudgetHealth = 'ok' | 'warning' | 'exceeded';
+
+/** A budget resolved against the spending in its current period. */
+export interface BudgetStatus extends Budget {
+  /** Start of the current period (inclusive). */
+  from: string;
+  /** End of the current period (inclusive). */
+  to: string;
+  spent: number;
+  /** Negative once the limit is passed. */
+  remaining: number;
+  /** Share of the limit used, where 1 is exactly at the limit. */
+  progress: number;
+  health: BudgetHealth;
+  /** Days left in the period, including today. */
+  daysLeft: number;
+}

@@ -9,6 +9,8 @@ import { Skeleton } from '@/components/ui/loader';
 import { PressableScale } from '@/components/ui/pressable-scale';
 import { Screen } from '@/components/ui/screen';
 import { Text } from '@/components/ui/text';
+import { BudgetOverview } from '@/features/budgets/components/budget-overview';
+import { useBudgetStatuses } from '@/features/budgets/hooks';
 import {
   AccountsStrip,
   AccountTable,
@@ -95,6 +97,7 @@ export default function DashboardScreen() {
   const { settings } = useSettings();
   const { colors } = useTheme();
   const { data, isPending, isRefetching, refetch, error } = useDashboard(preset);
+  const budgets = useBudgetStatuses();
 
   const hasActivity = !!data && data.totals.count > 0;
   const rangeText = data ? formatRange(data.range, settings.dateFormat) : '';
@@ -164,6 +167,8 @@ export default function DashboardScreen() {
             previous={data.previousTotals}
             averageDailyExpense={data.averageDailyExpense}
           />
+
+          <BudgetOverview statuses={budgets.data ?? []} isPending={budgets.isPending} />
 
           {hasActivity ? (
             <>

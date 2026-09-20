@@ -18,7 +18,7 @@ import { elevation, maxContentWidth, radius, spacing } from '@/theme/tokens';
 import { Icon, type IconName } from './icon';
 import { Text } from './text';
 
-type ToastType = 'success' | 'error' | 'info';
+type ToastType = 'success' | 'error' | 'warning' | 'info';
 
 interface ToastMessage {
   id: number;
@@ -37,7 +37,16 @@ const ToastContext = createContext<ToastContextValue | null>(null);
 const ICONS: Record<ToastType, IconName> = {
   success: 'checkmark-circle',
   error: 'alert-circle',
+  warning: 'warning',
   info: 'information-circle',
+};
+
+/** Warnings stay a little longer than confirmations, errors longest. */
+const DURATION: Record<ToastType, number> = {
+  success: 2600,
+  info: 2600,
+  warning: 5000,
+  error: 4000,
 };
 
 export function ToastProvider({ children }: { children: ReactNode }) {
@@ -47,13 +56,14 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const show = useCallback((message: string, type: ToastType = 'info') => {
     counter.current += 1;
     if (type === 'success') haptics.success();
+    if (type === 'warning') haptics.warning();
     if (type === 'error') haptics.error();
     setToast({ id: counter.current, type, message });
   }, []);
 
   useEffect(() => {
     if (!toast) return;
-    const timer = setTimeout(() => setToast(null), toast.type === 'error' ? 4000 : 2600);
+    const timer = setTimeout(() => setToast(null), DURATION[toast.type]);
     return () => clearTimeout(timer);
   }, [toast]);
 
@@ -79,7 +89,9 @@ function ToastView({ toast }: { toast: ToastMessage | null }) {
       ? colors.income
       : toast?.type === 'error'
         ? colors.danger
-        : colors.primary;
+        : toast?.type === 'warning'
+          ? colors.warning
+          : colors.primary;
 
   return (
     <View pointerEvents="none" style={[styles.host, { top: insets.top + spacing.sm }]}>

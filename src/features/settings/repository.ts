@@ -3,7 +3,23 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 import { runInTransaction } from '@/db/client';
 import { seedDefaults } from '@/db/seed';
 
+import { DEFAULT_WEEK_START, WEEK_STARTS, type WeekStart } from '@/lib/date';
+
 import { sanitizeSettings, type AppSettings, type SettingKey } from './settings';
+
+/** Single-value read for code outside React (services that need the week start). */
+export async function getWeekStart(db: SQLiteDatabase): Promise<WeekStart> {
+  const row = await db.getFirstAsync<{ value: string }>(
+    "SELECT value FROM settings WHERE key = 'weekStartsOn'"
+  );
+  if (!row) return DEFAULT_WEEK_START;
+  try {
+    const parsed = JSON.parse(row.value);
+    return WEEK_STARTS.includes(parsed as WeekStart) ? (parsed as WeekStart) : DEFAULT_WEEK_START;
+  } catch {
+    return DEFAULT_WEEK_START;
+  }
+}
 
 export async function loadSettings(db: SQLiteDatabase): Promise<AppSettings> {
   const rows = await db.getAllAsync<{ key: string; value: string }>(
