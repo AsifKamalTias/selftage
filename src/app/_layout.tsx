@@ -1,3 +1,4 @@
+import { isRunningInExpoGo } from 'expo';
 import { useFonts } from 'expo-font';
 import { Inter_400Regular } from '@expo-google-fonts/inter/400Regular';
 import { Inter_500Medium } from '@expo-google-fonts/inter/500Medium';
@@ -29,7 +30,11 @@ export const unstable_settings = {
 };
 
 SplashScreen.preventAutoHideAsync();
-SplashScreen.setOptions({ duration: 250, fade: true });
+// Expo Go cannot customise the native splash and warns if asked; dev and production
+// builds get the fade that hands over to <AnimatedSplash />.
+if (!isRunningInExpoGo()) {
+  SplashScreen.setOptions({ duration: 250, fade: true });
+}
 
 function createQueryClient() {
   return new QueryClient({
