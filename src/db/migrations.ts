@@ -156,6 +156,43 @@ ALTER TABLE transactions ADD COLUMN recurring_id TEXT REFERENCES recurring_rules
 CREATE INDEX idx_transactions_recurring ON transactions (recurring_id);
 `;
 
+const SCHEMA_V4 = `
+-- Savings goals. Money is reserved from an account (the ledger is untouched) until the
+-- goal is completed, at which point the reserve is spent as a real expense.
+CREATE TABLE goals (
+  id TEXT PRIMARY KEY NOT NULL,
+  name TEXT NOT NULL,
+  target_amount INTEGER NOT NULL CHECK (target_amount > 0),
+  target_date TEXT,
+  note TEXT,
+  icon TEXT NOT NULL,
+  color TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'completed')),
+  completed_at TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE UNIQUE INDEX idx_goals_name ON goals (name COLLATE NOCASE);
+CREATE INDEX idx_goals_status ON goals (status, target_date);
+
+-- Positive amounts reserve money, negative amounts release it back to the account.
+CREATE TABLE goal_contributions (
+  id TEXT PRIMARY KEY NOT NULL,
+  goal_id TEXT NOT NULL REFERENCES goals (id) ON DELETE CASCADE,
+  account_id TEXT NOT NULL REFERENCES accounts (id) ON DELETE RESTRICT,
+  amount INTEGER NOT NULL CHECK (amount != 0),
+  date TEXT NOT NULL,
+  note TEXT,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX idx_goal_contributions_goal ON goal_contributions (goal_id, date);
+CREATE INDEX idx_goal_contributions_account ON goal_contributions (account_id);
+
+-- Spends posted when a goal is completed keep a link to it.
+ALTER TABLE transactions ADD COLUMN goal_id TEXT REFERENCES goals (id) ON DELETE SET NULL;
+CREATE INDEX idx_transactions_goal ON transactions (goal_id);
+`;
+
 /**
  * Append-only list. Never edit a shipped migration; add a new version instead.
  * Each migration runs in its own transaction together with the version bump.
@@ -178,6 +215,12 @@ const MIGRATIONS: readonly Migration[] = [
     version: 3,
     up: async (tx) => {
       await tx.execAsync(SCHEMA_V3);
+    },
+  },
+  {
+    version: 4,
+    up: async (tx) => {
+      await tx.execAsync(SCHEMA_V4);
     },
   },
 ];

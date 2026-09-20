@@ -136,6 +136,15 @@ export default function TransactionDetailScreen() {
               accessibilityHint="Opens the recurring entry"
             />
           ) : null}
+          {data.goalId ? (
+            <ListRow
+              icon="flag"
+              title={data.goalName ?? 'Goal'}
+              subtitle="Spent from money held for this goal"
+              onPress={() => router.push({ pathname: '/goals/[id]', params: { id: data.goalId! } })}
+              accessibilityHint="Opens the goal"
+            />
+          ) : null}
         </ListGroup>
       </Section>
 

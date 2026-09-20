@@ -129,6 +129,9 @@ function RootStack() {
         options={{ presentation: modal, title: 'Edit transaction', animation: 'slide_from_bottom' }}
       />
       <Stack.Screen name="transaction/[id]/index" options={{ title: 'Transaction' }} />
+      <Stack.Screen name="goals/index" options={{ title: 'Goals' }} />
+      <Stack.Screen name="goals/[id]" options={{ title: 'Goal' }} />
+      <Stack.Screen name="goals/form" options={{ presentation: modal, title: 'Goal' }} />
       <Stack.Screen name="recurring/index" options={{ title: 'Recurring' }} />
       <Stack.Screen name="recurring/form" options={{ presentation: modal, title: 'Recurring' }} />
       <Stack.Screen name="budgets/index" options={{ title: 'Budgets' }} />

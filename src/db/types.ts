@@ -63,6 +63,10 @@ export interface AccountWithBalance extends Account {
   totalIncome: number;
   totalExpense: number;
   transactionCount: number;
+  /** Held by active goals. */
+  reserved: number;
+  /** Balance minus what goals are holding. */
+  available: number;
 }
 
 export interface Attachment {
@@ -94,6 +98,9 @@ export interface Transaction {
   /** Set when the entry was posted by a recurring rule. */
   recurringId: string | null;
   recurringName: string | null;
+  /** Set when the entry is the spend that completed a goal. */
+  goalId: string | null;
+  goalName: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -121,6 +128,47 @@ export interface LedgerEntry {
   /** Running balance after this entry within the current ledger view. */
   balance: number;
   createdAt: string;
+}
+
+export type GoalStatus = 'active' | 'completed';
+
+/** A savings target. Money is reserved from accounts until the goal is completed. */
+export interface Goal {
+  id: string;
+  name: string;
+  targetAmount: number;
+  targetDate: string | null;
+  note: string | null;
+  icon: string;
+  color: string;
+  status: GoalStatus;
+  completedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  /** Net of all contributions (reserved while active, spent once completed). */
+  saved: number;
+  contributionCount: number;
+}
+
+export interface GoalContribution {
+  id: string;
+  goalId: string;
+  accountId: string;
+  accountName: string;
+  accountIcon: string;
+  accountColor: string;
+  /** Positive reserves money, negative releases it. */
+  amount: number;
+  date: string;
+  note: string | null;
+  createdAt: string;
+}
+
+/** Money reserved per account, so a goal cannot hold more than the account has. */
+export interface AccountAvailability {
+  accountId: string;
+  reserved: number;
+  available: number;
 }
 
 export type RecurrenceFrequency = 'daily' | 'weekly' | 'monthly' | 'yearly';

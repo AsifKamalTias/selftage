@@ -101,7 +101,18 @@ const ACCOUNT_SELECT = `
     COALESCE((SELECT SUM(l.debit - l.credit) FROM ledger_entries l WHERE l.account_id = a.id), 0) AS balance,
     COALESCE((SELECT SUM(x.amount) FROM transactions x WHERE x.account_id = a.id AND x.kind = 'income'), 0) AS totalIncome,
     COALESCE((SELECT SUM(x.amount) FROM transactions x WHERE x.account_id = a.id AND x.kind = 'expense'), 0) AS totalExpense,
-    (SELECT COUNT(*) FROM transactions x WHERE x.account_id = a.id) AS transactionCount
+    (SELECT COUNT(*) FROM transactions x WHERE x.account_id = a.id) AS transactionCount,
+    COALESCE((
+      SELECT SUM(c.amount) FROM goal_contributions c
+      JOIN goals g ON g.id = c.goal_id
+      WHERE c.account_id = a.id AND g.status = 'active'
+    ), 0) AS reserved,
+    COALESCE((SELECT SUM(l.debit - l.credit) FROM ledger_entries l WHERE l.account_id = a.id), 0)
+      - COALESCE((
+          SELECT SUM(c.amount) FROM goal_contributions c
+          JOIN goals g ON g.id = c.goal_id
+          WHERE c.account_id = a.id AND g.status = 'active'
+        ), 0) AS available
   FROM accounts a
   JOIN account_types t ON t.id = a.account_type_id`;
 

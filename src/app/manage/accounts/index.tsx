@@ -18,6 +18,7 @@ import { radius, spacing } from '@/theme/tokens';
 
 function AccountCard({ account, isDefault }: { account: AccountWithBalance; isDefault: boolean }) {
   const { colors } = useTheme();
+  const { formatAmount } = useSettings();
   return (
     <PressableScale
       scaleTo={0.98}
@@ -52,6 +53,11 @@ function AccountCard({ account, isDefault }: { account: AccountWithBalance; isDe
               {account.accountTypeName}
               {account.accountNumber ? ` · ${account.accountNumber}` : ''}
             </Text>
+            {account.reserved ? (
+              <Text variant="micro" color="primary" numberOfLines={1}>
+                {formatAmount(account.reserved)} held by goals
+              </Text>
+            ) : null}
           </View>
           <Amount
             value={account.balance}
@@ -75,11 +81,15 @@ function AccountCard({ account, isDefault }: { account: AccountWithBalance; isDe
           </View>
           <View style={styles.stat}>
             <Text variant="micro" color="textMuted">
-              Transactions
+              {account.reserved ? 'Available' : 'Transactions'}
             </Text>
-            <Text variant="caption" weight="semibold">
-              {account.transactionCount}
-            </Text>
+            {account.reserved ? (
+              <Amount value={account.available} variant="caption" weight="semibold" />
+            ) : (
+              <Text variant="caption" weight="semibold">
+                {account.transactionCount}
+              </Text>
+            )}
           </View>
         </View>
       </Card>

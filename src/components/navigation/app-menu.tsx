@@ -13,6 +13,7 @@ import { Text } from '@/components/ui/text';
 import { useAccounts, useAccountTypes } from '@/features/accounts/hooks';
 import { useBudgetStatuses } from '@/features/budgets/hooks';
 import { useCatalog } from '@/features/catalog/hooks';
+import { useGoals } from '@/features/goals/hooks';
 import { useRecurringRules } from '@/features/recurring/hooks';
 import { useTheme } from '@/theme/theme-provider';
 import { brandGradient, elevation, radius, spacing } from '@/theme/tokens';
@@ -89,12 +90,14 @@ function AppMenu({ visible, onClose }: { visible: boolean; onClose: () => void }
   const sources = useCatalog('sources');
   const budgets = useBudgetStatuses({ includeInactive: true });
   const recurring = useRecurringRules();
+  const goals = useGoals();
 
   const count = (value: number | undefined, one: string, many = `${one}s`) =>
     value == null ? '—' : `${value} ${value === 1 ? one : many}`;
 
   const attention = (budgets.data ?? []).filter((b) => b.isActive && b.health !== 'ok').length;
   const activeRecurring = (recurring.data ?? []).filter((r) => r.isActive).length;
+  const activeGoals = (goals.data ?? []).filter((g) => g.status === 'active').length;
 
   const groups: { title: string; items: MenuItem[] }[] = [
     {
@@ -108,6 +111,15 @@ function AppMenu({ visible, onClose }: { visible: boolean; onClose: () => void }
             ? `${attention} need${attention === 1 ? 's' : ''} attention`
             : count(budgets.data?.length, 'budget'),
           href: '/budgets',
+        },
+        {
+          icon: 'flag-outline',
+          color: '#14B8A6',
+          title: 'Goals',
+          subtitle: goals.data?.length
+            ? `${activeGoals} in progress of ${goals.data.length}`
+            : 'Save towards a target',
+          href: '/goals',
         },
         {
           icon: 'repeat',

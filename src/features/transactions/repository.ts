@@ -61,7 +61,8 @@ const FROM_JOINS = `
   JOIN categories c ON c.id = t.category_id
   LEFT JOIN sources s ON s.id = t.source_id
   JOIN accounts a ON a.id = t.account_id
-  LEFT JOIN recurring_rules r ON r.id = t.recurring_id`;
+  LEFT JOIN recurring_rules r ON r.id = t.recurring_id
+  LEFT JOIN goals gl ON gl.id = t.goal_id`;
 
 const SELECT_COLUMNS = `
   t.id, t.kind, t.amount, t.title, t.note, t.date,
@@ -69,6 +70,7 @@ const SELECT_COLUMNS = `
   t.source_id AS sourceId, s.name AS sourceName,
   t.account_id AS accountId, a.name AS accountName,
   t.recurring_id AS recurringId, r.name AS recurringName,
+  t.goal_id AS goalId, gl.name AS goalName,
   (SELECT COUNT(*) FROM attachments x WHERE x.transaction_id = t.id) AS attachmentCount,
   t.created_at AS createdAt, t.updated_at AS updatedAt`;
 
@@ -249,22 +251,34 @@ function ledgerAmounts(input: TransactionInput): [debit: number, credit: number]
 }
 
 /** Inserts the transaction, its ledger posting and attachment rows atomically. */
-export async function insertTransaction(
-  db: SQLiteDatabase,
+export interface TransactionOrigin {
+  /** Set when a recurring rule posted this entry. */
+  recurringId?: string;
+  /** Set when this entry is the spend that completed a goal. */
+  goalId?: string;
+}
+
+/**
+ * Writes the transaction, its ledger posting and attachments using an existing
+ * transaction handle. Callers that already opened one (e.g. completing a goal) use this;
+ * everyone else uses `insertTransaction`, which opens one for them.
+ */
+export async function writeTransaction(
+  tx: SQLiteDatabase,
   id: string,
   input: TransactionInput,
   attachments: NewAttachment[],
-  { recurringId }: { recurringId?: string } = {}
+  { recurringId, goalId }: TransactionOrigin = {}
 ): Promise<void> {
   const now = nowTimestamp();
   const [debit, credit] = ledgerAmounts(input);
-  await runInTransaction(db, async (tx) => {
+  {
     await assertReferences(tx, input);
     await tx.runAsync(
       `INSERT INTO transactions
          (id, kind, amount, category_id, source_id, account_id, title, note, date, recurring_id,
-          created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          goal_id, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id,
         input.kind,
@@ -276,6 +290,7 @@ export async function insertTransaction(
         input.note,
         input.date,
         recurringId ?? null,
+        goalId ?? null,
         now,
         now,
       ]
@@ -287,7 +302,18 @@ export async function insertTransaction(
       [newId(), input.accountId, id, input.kind, input.date, input.title, debit, credit, now]
     );
     await insertAttachments(tx, id, attachments);
-  });
+  }
+}
+
+/** Inserts a transaction in its own database transaction. */
+export async function insertTransaction(
+  db: SQLiteDatabase,
+  id: string,
+  input: TransactionInput,
+  attachments: NewAttachment[],
+  origin: TransactionOrigin = {}
+): Promise<void> {
+  await runInTransaction(db, (tx) => writeTransaction(tx, id, input, attachments, origin));
 }
 
 /**
