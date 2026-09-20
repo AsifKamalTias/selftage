@@ -8,6 +8,7 @@ import {
   parseISODate,
   previousRange,
   rangeForPreset,
+  startOfWeek,
   toISODate,
   type DateFormat,
 } from '../date';
@@ -42,21 +43,49 @@ describe('formatDate', () => {
   });
 });
 
+describe('startOfWeek', () => {
+  it('rewinds to the configured first day', () => {
+    const thursday = new Date(2026, 8, 17);
+    expect(toISODate(startOfWeek(thursday, 1))).toBe('2026-09-14');
+    expect(toISODate(startOfWeek(thursday, 0))).toBe('2026-09-13');
+    expect(toISODate(startOfWeek(thursday, 4))).toBe('2026-09-17');
+  });
+});
+
 describe('rangeForPreset', () => {
   const now = new Date(2026, 8, 17); // Thu 17 Sep 2026
 
   it('computes calendar ranges', () => {
-    expect(rangeForPreset('today', now)).toEqual({ from: '2026-09-17', to: '2026-09-17' });
-    expect(rangeForPreset('this-week', now)).toEqual({ from: '2026-09-14', to: '2026-09-20' });
-    expect(rangeForPreset('this-month', now)).toEqual({ from: '2026-09-01', to: '2026-09-30' });
-    expect(rangeForPreset('last-month', now)).toEqual({ from: '2026-08-01', to: '2026-08-31' });
-    expect(rangeForPreset('last-3-months', now)).toEqual({ from: '2026-07-01', to: '2026-09-30' });
-    expect(rangeForPreset('last-year', now)).toEqual({ from: '2025-01-01', to: '2025-12-31' });
-    expect(rangeForPreset('all', now)).toEqual({});
+    expect(rangeForPreset('today', { now })).toEqual({ from: '2026-09-17', to: '2026-09-17' });
+    expect(rangeForPreset('this-week', { now })).toEqual({ from: '2026-09-14', to: '2026-09-20' });
+    expect(rangeForPreset('this-month', { now })).toEqual({ from: '2026-09-01', to: '2026-09-30' });
+    expect(rangeForPreset('last-month', { now })).toEqual({ from: '2026-08-01', to: '2026-08-31' });
+    expect(rangeForPreset('last-3-months', { now })).toEqual({
+      from: '2026-07-01',
+      to: '2026-09-30',
+    });
+    expect(rangeForPreset('last-year', { now })).toEqual({ from: '2025-01-01', to: '2025-12-31' });
+    expect(rangeForPreset('all', { now })).toEqual({});
+  });
+
+  it('starts the week on the configured day', () => {
+    // Thu 17 Sep 2026.
+    expect(rangeForPreset('this-week', { now, weekStartsOn: 0 })).toEqual({
+      from: '2026-09-13',
+      to: '2026-09-19',
+    });
+    expect(rangeForPreset('this-week', { now, weekStartsOn: 6 })).toEqual({
+      from: '2026-09-12',
+      to: '2026-09-18',
+    });
+    expect(rangeForPreset('this-week', { now, weekStartsOn: 4 })).toEqual({
+      from: '2026-09-17',
+      to: '2026-09-23',
+    });
   });
 
   it('handles January for "last month"', () => {
-    expect(rangeForPreset('last-month', new Date(2026, 0, 10))).toEqual({
+    expect(rangeForPreset('last-month', { now: new Date(2026, 0, 10) })).toEqual({
       from: '2025-12-01',
       to: '2025-12-31',
     });

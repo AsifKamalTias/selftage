@@ -36,6 +36,23 @@ export const MONTHS_LONG = [
 
 const WEEKDAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
 
+export const WEEKDAYS_LONG = [
+  'Sunday',
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+] as const;
+
+/** Day a week starts on, matching `Date.getDay()` (0 = Sunday). */
+export type WeekStart = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+
+export const WEEK_STARTS: readonly WeekStart[] = [0, 1, 2, 3, 4, 5, 6];
+
+export const DEFAULT_WEEK_START: WeekStart = 1;
+
 export type DateFormat =
   'DD MMM YYYY' | 'MMM DD, YYYY' | 'DD/MM/YYYY' | 'MM/DD/YYYY' | 'YYYY-MM-DD';
 
@@ -79,6 +96,15 @@ export function addDays(date: Date, days: number): Date {
 
 export function addMonths(date: Date, months: number): Date {
   return new Date(date.getFullYear(), date.getMonth() + months, 1);
+}
+
+/** First day of the week containing `date`, honouring the user's week-start preference. */
+export function startOfWeek(date: Date, weekStartsOn: WeekStart = DEFAULT_WEEK_START): Date {
+  return addDays(date, -((date.getDay() - weekStartsOn + 7) % 7));
+}
+
+export function endOfWeek(date: Date, weekStartsOn: WeekStart = DEFAULT_WEEK_START): Date {
+  return addDays(startOfWeek(date, weekStartsOn), 6);
 }
 
 export function startOfMonth(date: Date): Date {
@@ -178,13 +204,22 @@ export function periodLabel(preset: PeriodPreset): string {
   return PERIOD_PRESETS.find((p) => p.value === preset)?.label ?? preset;
 }
 
-export function rangeForPreset(preset: PeriodPreset, now = new Date()): DateRange {
+export interface RangeOptions {
+  weekStartsOn?: WeekStart;
+  /** Reference date; defaults to now. */
+  now?: Date;
+}
+
+export function rangeForPreset(
+  preset: PeriodPreset,
+  { weekStartsOn = DEFAULT_WEEK_START, now = new Date() }: RangeOptions = {}
+): DateRange {
   switch (preset) {
     case 'today':
       return { from: toISODate(now), to: toISODate(now) };
     case 'this-week': {
-      const monday = addDays(now, -((now.getDay() + 6) % 7));
-      return { from: toISODate(monday), to: toISODate(addDays(monday, 6)) };
+      const start = startOfWeek(now, weekStartsOn);
+      return { from: toISODate(start), to: toISODate(addDays(start, 6)) };
     }
     case 'this-month':
       return { from: toISODate(startOfMonth(now)), to: toISODate(endOfMonth(now)) };

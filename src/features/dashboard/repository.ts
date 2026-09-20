@@ -14,6 +14,7 @@ import {
   toISODate,
   todayISO,
   type DateRange,
+  type WeekStart,
 } from '@/lib/date';
 
 import {
@@ -148,7 +149,8 @@ async function boundRange(db: SQLiteDatabase, range: DateRange): Promise<Bounded
 
 export async function getDashboardData(
   db: SQLiteDatabase,
-  requested: DateRange
+  requested: DateRange,
+  weekStartsOn: WeekStart
 ): Promise<DashboardData> {
   const range = await boundRange(db, requested);
   const previous = previousRange(requested);
@@ -181,7 +183,7 @@ export async function getDashboardData(
   ]);
 
   const granularity = pickGranularity(range);
-  const buckets = bucketize(daily, range, granularity);
+  const buckets = bucketize(daily, range, granularity, weekStartsOn);
   // Average over elapsed days only, so a half-finished month is not diluted.
   const today = todayISO();
   const elapsedTo = range.to < today ? range.to : today;

@@ -1,6 +1,12 @@
-import { getLocales } from 'expo-localization';
+import { getCalendars, getLocales } from 'expo-localization';
 
-import { DATE_FORMATS, type DateFormat } from '@/lib/date';
+import {
+  DATE_FORMATS,
+  DEFAULT_WEEK_START,
+  WEEK_STARTS,
+  type DateFormat,
+  type WeekStart,
+} from '@/lib/date';
 
 import { FALLBACK_CURRENCY_CODE, isSupportedCurrency } from './currencies';
 
@@ -13,6 +19,8 @@ export interface AppSettings {
   defaultAccountId: string | null;
   /** Used for the dashboard greeting. */
   displayName: string;
+  /** First day of the week (0 = Sunday), used by weekly budgets and "this week". */
+  weekStartsOn: WeekStart;
 }
 
 export type SettingKey = keyof AppSettings;
@@ -22,6 +30,14 @@ export function deviceCurrency(): string {
   return isSupportedCurrency(code) ? code : FALLBACK_CURRENCY_CODE;
 }
 
+/** The device's first day of week; `firstWeekday` is 1 = Sunday, ours is 0 = Sunday. */
+export function deviceWeekStart(): WeekStart {
+  const firstWeekday = getCalendars()[0]?.firstWeekday;
+  if (firstWeekday == null) return DEFAULT_WEEK_START;
+  const normalized = (firstWeekday - 1) as WeekStart;
+  return WEEK_STARTS.includes(normalized) ? normalized : DEFAULT_WEEK_START;
+}
+
 export function defaultSettings(): AppSettings {
   return {
     currency: deviceCurrency(),
@@ -29,6 +45,7 @@ export function defaultSettings(): AppSettings {
     dateFormat: 'DD MMM YYYY',
     defaultAccountId: null,
     displayName: '',
+    weekStartsOn: deviceWeekStart(),
   };
 }
 
@@ -51,5 +68,8 @@ export function sanitizeSettings(raw: Partial<Record<SettingKey, unknown>>): App
       : defaults.dateFormat,
     defaultAccountId: typeof raw.defaultAccountId === 'string' ? raw.defaultAccountId : null,
     displayName: typeof raw.displayName === 'string' ? raw.displayName : '',
+    weekStartsOn: WEEK_STARTS.includes(raw.weekStartsOn as WeekStart)
+      ? (raw.weekStartsOn as WeekStart)
+      : defaults.weekStartsOn,
   };
 }

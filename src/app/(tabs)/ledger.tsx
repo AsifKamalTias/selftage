@@ -52,7 +52,7 @@ export default function LedgerScreen() {
   }
 
   const accounts = useAccounts();
-  const range = rangeForPreset(preset);
+  const range = rangeForPreset(preset, { weekStartsOn: settings.weekStartsOn });
   const filters: LedgerFilters = {
     accountId,
     from: range.from,

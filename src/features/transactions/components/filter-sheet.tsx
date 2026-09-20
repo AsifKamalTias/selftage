@@ -11,7 +11,7 @@ import type { EntryKind } from '@/db/types';
 import { useAccounts } from '@/features/accounts/hooks';
 import { useCatalog } from '@/features/catalog/hooks';
 import { useSettings } from '@/features/settings/settings-provider';
-import { PERIOD_PRESETS, rangeForPreset, type PeriodPreset } from '@/lib/date';
+import { PERIOD_PRESETS, rangeForPreset, type PeriodPreset, type WeekStart } from '@/lib/date';
 import { minorToInput, parseAmountInput, sanitizeAmountInput } from '@/lib/money';
 import { spacing } from '@/theme/tokens';
 
@@ -51,10 +51,10 @@ export function activeFilterCount(filters: HistoryFilters): number {
   );
 }
 
-export function resolveRange(filters: HistoryFilters) {
+export function resolveRange(filters: HistoryFilters, weekStartsOn: WeekStart) {
   return filters.period === 'custom'
     ? { from: filters.from, to: filters.to }
-    : rangeForPreset(filters.period);
+    : rangeForPreset(filters.period, { weekStartsOn });
 }
 
 function toggle(list: string[], id: string) {
@@ -86,7 +86,7 @@ export function FilterSheet({
   value: HistoryFilters;
   onApply: (filters: HistoryFilters) => void;
 }) {
-  const { currency } = useSettings();
+  const { currency, settings } = useSettings();
   const [draft, setDraft] = useState(value);
   const [minText, setMinText] = useState(
     value.minAmount != null ? minorToInput(value.minAmount) : ''
@@ -166,7 +166,10 @@ export function FilterSheet({
             icon="calendar-outline"
             selected={draft.period === 'custom'}
             onPress={() => {
-              const current = draft.period === 'custom' ? {} : rangeForPreset(draft.period);
+              const current =
+                draft.period === 'custom'
+                  ? {}
+                  : rangeForPreset(draft.period, { weekStartsOn: settings.weekStartsOn });
               setDraft({ ...draft, period: 'custom', from: current.from, to: current.to });
             }}
           />

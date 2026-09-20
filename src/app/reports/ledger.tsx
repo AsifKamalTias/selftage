@@ -140,7 +140,7 @@ export default function LedgerReportScreen() {
   const [exporting, setExporting] = useState<'pdf' | 'csv' | null>(null);
 
   const accounts = useAccounts();
-  const range = rangeForPreset(preset);
+  const range = rangeForPreset(preset, { weekStartsOn: settings.weekStartsOn });
   const accountIds =
     scope === COMBINED ? null : scope === EACH ? (accounts.data ?? []).map((a) => a.id) : [scope];
   const statements = useLedgerStatements({ from: range.from, to: range.to, accountIds });

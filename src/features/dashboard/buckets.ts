@@ -2,10 +2,13 @@ import {
   addDays,
   addMonths,
   daysBetween,
+  DEFAULT_WEEK_START,
   MONTHS_SHORT,
   parseISODate,
+  startOfWeek,
   toISODate,
   type DateRange,
+  type WeekStart,
 } from '@/lib/date';
 
 export type Granularity = 'day' | 'week' | 'month' | 'year';
@@ -37,16 +40,12 @@ export function pickGranularity(range: BoundedRange): Granularity {
   return months <= 24 ? 'month' : 'year';
 }
 
-function mondayOf(date: Date): Date {
-  return addDays(date, -((date.getDay() + 6) % 7));
-}
-
-function bucketKey(iso: string, granularity: Granularity): string {
+function bucketKey(iso: string, granularity: Granularity, weekStartsOn: WeekStart): string {
   switch (granularity) {
     case 'day':
       return iso;
     case 'week':
-      return toISODate(mondayOf(parseISODate(iso)));
+      return toISODate(startOfWeek(parseISODate(iso), weekStartsOn));
     case 'month':
       return iso.slice(0, 7);
     default:
@@ -58,7 +57,8 @@ function bucketKey(iso: string, granularity: Granularity): string {
 export function bucketize(
   daily: DailyTotal[],
   range: BoundedRange,
-  granularity: Granularity
+  granularity: Granularity,
+  weekStartsOn: WeekStart = DEFAULT_WEEK_START
 ): Bucket[] {
   const buckets: Bucket[] = [];
   const end = parseISODate(range.to);
@@ -77,7 +77,7 @@ export function bucketize(
           : String(cursor.getDate());
         break;
       case 'week':
-        next = addDays(mondayOf(cursor), 7);
+        next = addDays(startOfWeek(cursor, weekStartsOn), 7);
         label = `${cursor.getDate()} ${MONTHS_SHORT[cursor.getMonth()]}`;
         break;
       case 'month':
@@ -93,7 +93,7 @@ export function bucketize(
     const bucketEnd = addDays(next, -1) < end ? addDays(next, -1) : end;
     const from = toISODate(cursor);
     buckets.push({
-      key: bucketKey(from, granularity),
+      key: bucketKey(from, granularity, weekStartsOn),
       label,
       from,
       to: toISODate(bucketEnd),
@@ -105,7 +105,7 @@ export function bucketize(
 
   const index = new Map(buckets.map((b) => [b.key, b]));
   for (const day of daily) {
-    const bucket = index.get(bucketKey(day.date, granularity));
+    const bucket = index.get(bucketKey(day.date, granularity, weekStartsOn));
     if (bucket) {
       bucket.income += day.income;
       bucket.expense += day.expense;

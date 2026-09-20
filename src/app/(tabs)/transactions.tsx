@@ -68,7 +68,7 @@ export default function TransactionsScreen() {
   const categories = useCatalog('categories');
   const sources = useCatalog('sources');
 
-  const range = resolveRange(filters);
+  const range = resolveRange(filters, settings.weekStartsOn);
   const query: TransactionFilters = {
     kind: kind === 'all' ? undefined : kind,
     search: debouncedSearch.trim() || undefined,
