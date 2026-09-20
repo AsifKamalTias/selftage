@@ -128,6 +128,34 @@ CREATE UNIQUE INDEX idx_budgets_scope ON budgets (period, IFNULL(category_id, '*
 CREATE INDEX idx_budgets_category ON budgets (category_id);
 `;
 
+const SCHEMA_V3 = `
+-- Templates that post transactions on a schedule. next_date is the next occurrence
+-- that has not been posted yet; it advances as entries are created.
+CREATE TABLE recurring_rules (
+  id TEXT PRIMARY KEY NOT NULL,
+  kind TEXT NOT NULL CHECK (kind IN ('income', 'expense')),
+  name TEXT NOT NULL,
+  amount INTEGER NOT NULL CHECK (amount > 0),
+  category_id TEXT NOT NULL REFERENCES categories (id) ON DELETE RESTRICT,
+  source_id TEXT REFERENCES sources (id) ON DELETE RESTRICT,
+  account_id TEXT NOT NULL REFERENCES accounts (id) ON DELETE RESTRICT,
+  note TEXT,
+  frequency TEXT NOT NULL CHECK (frequency IN ('daily', 'weekly', 'monthly', 'yearly')),
+  interval_count INTEGER NOT NULL DEFAULT 1 CHECK (interval_count BETWEEN 1 AND 99),
+  start_date TEXT NOT NULL,
+  next_date TEXT NOT NULL,
+  last_run_date TEXT,
+  is_active INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE INDEX idx_recurring_due ON recurring_rules (is_active, next_date);
+
+-- Posted entries remember their rule; deleting a rule keeps its history.
+ALTER TABLE transactions ADD COLUMN recurring_id TEXT REFERENCES recurring_rules (id) ON DELETE SET NULL;
+CREATE INDEX idx_transactions_recurring ON transactions (recurring_id);
+`;
+
 /**
  * Append-only list. Never edit a shipped migration; add a new version instead.
  * Each migration runs in its own transaction together with the version bump.
@@ -144,6 +172,12 @@ const MIGRATIONS: readonly Migration[] = [
     version: 2,
     up: async (tx) => {
       await tx.execAsync(SCHEMA_V2);
+    },
+  },
+  {
+    version: 3,
+    up: async (tx) => {
+      await tx.execAsync(SCHEMA_V3);
     },
   },
 ];

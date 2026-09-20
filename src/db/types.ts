@@ -91,6 +91,9 @@ export interface Transaction {
   accountId: string;
   accountName: string;
   attachmentCount: number;
+  /** Set when the entry was posted by a recurring rule. */
+  recurringId: string | null;
+  recurringName: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -118,6 +121,44 @@ export interface LedgerEntry {
   /** Running balance after this entry within the current ledger view. */
   balance: number;
   createdAt: string;
+}
+
+export type RecurrenceFrequency = 'daily' | 'weekly' | 'monthly' | 'yearly';
+
+export const RECURRENCE_FREQUENCIES: readonly RecurrenceFrequency[] = [
+  'daily',
+  'weekly',
+  'monthly',
+  'yearly',
+];
+
+/** A template that posts a transaction every `intervalCount` × `frequency`. */
+export interface RecurringRule {
+  id: string;
+  kind: EntryKind;
+  name: string;
+  amount: number;
+  categoryId: string;
+  categoryName: string;
+  categoryIcon: string;
+  categoryColor: string;
+  sourceId: string | null;
+  sourceName: string | null;
+  accountId: string;
+  accountName: string;
+  note: string | null;
+  frequency: RecurrenceFrequency;
+  /** Every N periods; 1 = every period. */
+  intervalCount: number;
+  startDate: string;
+  /** Next occurrence not yet posted. */
+  nextDate: string;
+  lastRunDate: string | null;
+  isActive: boolean;
+  /** Transactions posted by this rule so far (list queries only). */
+  postedCount?: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export type BudgetPeriod = 'daily' | 'weekly' | 'monthly';

@@ -20,6 +20,7 @@ import { useToast } from '@/components/ui/toast';
 import { useAccounts, useAccountTypes } from '@/features/accounts/hooks';
 import { useCatalog } from '@/features/catalog/hooks';
 import { useBudgetStatuses } from '@/features/budgets/hooks';
+import { useRecurringRules } from '@/features/recurring/hooks';
 import { useExportTransactions, useResetAllData } from '@/features/settings/hooks';
 import { useSettings } from '@/features/settings/settings-provider';
 import type { ThemeMode } from '@/features/settings/settings';
@@ -135,6 +136,7 @@ export default function SettingsScreen() {
   const categories = useCatalog('categories');
   const sources = useCatalog('sources');
   const budgets = useBudgetStatuses({ includeInactive: true });
+  const recurring = useRecurringRules();
   const exportTransactions = useExportTransactions();
   const reset = useResetAllData();
 
@@ -174,6 +176,11 @@ export default function SettingsScreen() {
 
   const countLabel = (count: number | undefined, noun: string) =>
     count == null ? '' : `${count} ${noun}${count === 1 ? '' : 's'}`;
+
+  const activeRecurring = (recurring.data ?? []).filter((rule) => rule.isActive).length;
+  const recurringSubtitle = recurring.data?.length
+    ? `${recurring.data.length} ${recurring.data.length === 1 ? 'entry' : 'entries'} · ${activeRecurring} active`
+    : 'Add entries that repeat automatically';
 
   const attention = (budgets.data ?? []).filter((b) => b.isActive && b.health !== 'ok').length;
   const budgetSubtitle = budgets.data?.length
@@ -258,6 +265,13 @@ export default function SettingsScreen() {
 
       <Section title="Manage">
         <ListGroup>
+          <ListRow
+            icon="repeat"
+            iconColor="#0EA5E9"
+            title="Recurring entries"
+            subtitle={recurringSubtitle}
+            onPress={() => router.push('/recurring')}
+          />
           <ListRow
             icon="speedometer-outline"
             iconColor="#6366F1"

@@ -125,6 +125,17 @@ export default function TransactionDetailScreen() {
             accessibilityHint="Opens the account ledger"
           />
           <ListRow icon="calendar" title={formatDate(data.date)} subtitle="Date" />
+          {data.recurringId ? (
+            <ListRow
+              icon="repeat"
+              title={data.recurringName ?? 'Recurring entry'}
+              subtitle="Posted automatically by a recurring entry"
+              onPress={() =>
+                router.push({ pathname: '/recurring/form', params: { id: data.recurringId! } })
+              }
+              accessibilityHint="Opens the recurring entry"
+            />
+          ) : null}
         </ListGroup>
       </Section>
 

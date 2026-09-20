@@ -60,13 +60,15 @@ const FROM_JOINS = `
   FROM transactions t
   JOIN categories c ON c.id = t.category_id
   LEFT JOIN sources s ON s.id = t.source_id
-  JOIN accounts a ON a.id = t.account_id`;
+  JOIN accounts a ON a.id = t.account_id
+  LEFT JOIN recurring_rules r ON r.id = t.recurring_id`;
 
 const SELECT_COLUMNS = `
   t.id, t.kind, t.amount, t.title, t.note, t.date,
   t.category_id AS categoryId, c.name AS categoryName, c.icon AS categoryIcon, c.color AS categoryColor,
   t.source_id AS sourceId, s.name AS sourceName,
   t.account_id AS accountId, a.name AS accountName,
+  t.recurring_id AS recurringId, r.name AS recurringName,
   (SELECT COUNT(*) FROM attachments x WHERE x.transaction_id = t.id) AS attachmentCount,
   t.created_at AS createdAt, t.updated_at AS updatedAt`;
 
@@ -251,7 +253,8 @@ export async function insertTransaction(
   db: SQLiteDatabase,
   id: string,
   input: TransactionInput,
-  attachments: NewAttachment[]
+  attachments: NewAttachment[],
+  { recurringId }: { recurringId?: string } = {}
 ): Promise<void> {
   const now = nowTimestamp();
   const [debit, credit] = ledgerAmounts(input);
@@ -259,8 +262,9 @@ export async function insertTransaction(
     await assertReferences(tx, input);
     await tx.runAsync(
       `INSERT INTO transactions
-         (id, kind, amount, category_id, source_id, account_id, title, note, date, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         (id, kind, amount, category_id, source_id, account_id, title, note, date, recurring_id,
+          created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id,
         input.kind,
@@ -271,6 +275,7 @@ export async function insertTransaction(
         input.title,
         input.note,
         input.date,
+        recurringId ?? null,
         now,
         now,
       ]

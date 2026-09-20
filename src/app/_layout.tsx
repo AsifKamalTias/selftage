@@ -16,6 +16,7 @@ import { AnimatedSplash } from '@/components/brand/animated-splash';
 import { ToastProvider } from '@/components/ui/toast';
 import { DATABASE_NAME } from '@/db/client';
 import { migrateDatabase } from '@/db/migrations';
+import { RecurringRunner } from '@/features/recurring/recurring-runner';
 import { SettingsProvider, useSettings } from '@/features/settings/settings-provider';
 import { ThemeProvider, useTheme } from '@/theme/theme-provider';
 import { fonts } from '@/theme/tokens';
@@ -88,6 +89,7 @@ function ThemedApp({ onReady }: { onReady: (ready: boolean) => void }) {
   return (
     <ThemeProvider mode={settings.themeMode}>
       <ToastProvider>
+        <RecurringRunner />
         <RootStack />
       </ToastProvider>
     </ThemeProvider>
@@ -119,6 +121,8 @@ function RootStack() {
         options={{ presentation: modal, title: 'Edit transaction', animation: 'slide_from_bottom' }}
       />
       <Stack.Screen name="transaction/[id]/index" options={{ title: 'Transaction' }} />
+      <Stack.Screen name="recurring/index" options={{ title: 'Recurring' }} />
+      <Stack.Screen name="recurring/form" options={{ presentation: modal, title: 'Recurring' }} />
       <Stack.Screen name="budgets/index" options={{ title: 'Budgets' }} />
       <Stack.Screen name="budgets/form" options={{ presentation: modal, title: 'Budget' }} />
       <Stack.Screen name="manage/types/index" options={{ title: 'Income & expense types' }} />
