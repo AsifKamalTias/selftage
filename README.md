@@ -8,6 +8,7 @@ A personal income and expense tracker that keeps everything on your device. Buil
 - **Accounts** — cash, bank, mobile banking, cheque and your own types, each with an opening balance and running balance.
 - **Ledger** — every transaction is posted automatically as a debit or credit with a running balance, filterable by account and period.
 - **Ledger report** — statements per account or combined, with opening and closing balances, exportable as PDF or CSV.
+- **Recurring** — repeat any income or expense daily, weekly, monthly or yearly with an "every N" interval and a start date; entries post themselves (catching up anything missed while the app was closed) and each can be paused, edited or deleted.
 - **Budgets** — daily, weekly or monthly limits, overall or per expense type, with a warning as you approach the limit and an alert when you pass it.
 - **Dashboard** — balance, income and expense totals with period comparison, cash-flow and running-total charts, breakdown by type and source, account summaries and recent activity.
 - **History** — search and filter by kind, date range, account, type, source, amount and attachments.
@@ -49,7 +50,7 @@ src/
   components/   design system, charts, navigation
   db/           schema, migrations, query hooks
   features/     accounts, attachments, budgets, catalog, dashboard,
-                export, ledger, settings, transactions
+                export, ledger, recurring, settings, transactions
   lib/          money, dates, ids, haptics
   theme/        tokens and theme provider
 ```
