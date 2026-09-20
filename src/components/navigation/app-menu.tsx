@@ -124,7 +124,7 @@ function AppMenu({ visible, onClose }: { visible: boolean; onClose: () => void }
         {
           icon: 'repeat',
           color: '#0EA5E9',
-          title: 'Recurring entries',
+          title: 'Recurring',
           subtitle: recurring.data?.length
             ? `${activeRecurring} active of ${recurring.data.length}`
             : 'Repeat income or expenses',
