@@ -1,7 +1,15 @@
 import { DarkTheme, DefaultTheme, ThemeProvider as NavigationThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { createContext, use, useEffect, type ReactNode } from 'react';
-import { Appearance, Platform, useColorScheme } from 'react-native';
+import { createContext, use, useEffect, useRef, useState, type ReactNode } from 'react';
+import { Appearance, Platform, StyleSheet, useColorScheme, View } from 'react-native';
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 
 import type { ThemeMode } from '@/features/settings/settings';
 
@@ -56,11 +64,64 @@ export function ThemeProvider({ mode, children }: { mode: ThemeMode; children: R
     <ThemeContext value={theme}>
       <NavigationThemeProvider value={navigationTheme(isDark, colors)}>
         <StatusBar style={isDark ? 'light' : 'dark'} />
-        {children}
+        <View style={styles.root}>
+          {children}
+          <ThemeTransition background={colors.background} />
+        </View>
       </NavigationThemeProvider>
     </ThemeContext>
   );
 }
+
+/**
+ * Cross-fades between palettes: when the background changes, the previous color is painted
+ * over the app and faded out, so switching appearance dissolves instead of snapping.
+ */
+function ThemeTransition({ background }: { background: string }) {
+  const reduceMotion = useReducedMotion();
+  const previous = useRef(background);
+  const [fadeFrom, setFadeFrom] = useState<string | null>(null);
+  const opacity = useSharedValue(0);
+
+  useEffect(() => {
+    if (previous.current === background) return;
+    const from = previous.current;
+    previous.current = background;
+    if (reduceMotion) return;
+
+    setFadeFrom(from);
+    opacity.set(1);
+    opacity.set(
+      withTiming(0, { duration: 420, easing: Easing.out(Easing.cubic) }, (finished) => {
+        if (finished) scheduleOnRN(setFadeFrom, null);
+      })
+    );
+  }, [background, opacity, reduceMotion]);
+
+  const animatedStyle = useAnimatedStyle(() => ({ opacity: opacity.get() }));
+
+  if (!fadeFrom) return null;
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={[
+        StyleSheet.absoluteFill,
+        styles.overlay,
+        { backgroundColor: fadeFrom },
+        animatedStyle,
+      ]}
+    />
+  );
+}
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
+  overlay: {
+    zIndex: 9998,
+  },
+});
 
 export function useTheme(): Theme {
   const theme = use(ThemeContext);
