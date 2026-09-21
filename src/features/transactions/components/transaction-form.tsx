@@ -49,6 +49,8 @@ export interface TransactionFormProps {
   /** Prefill from another transaction (duplicate) without attachments. */
   template?: TransactionDetail;
   defaultKind?: EntryKind;
+  /** Preselected date for new entries (the calendar adds one to a chosen day). */
+  defaultDate?: string;
   submitLabel?: string;
   /** Resolve to reset the form for another entry; reject to keep values. */
   onSubmit: (result: TransactionFormResult) => Promise<void>;
@@ -66,6 +68,7 @@ export function TransactionForm({
   initial,
   template,
   defaultKind = 'expense',
+  defaultDate,
   submitLabel = 'Save transaction',
   onSubmit,
   allowSaveAndNew = false,
@@ -83,7 +86,7 @@ export function TransactionForm({
     seed?.accountId ?? settings.defaultAccountId
   );
   const [groupId, setGroupId] = useState<string | null>(seed?.groupId ?? null);
-  const [date, setDate] = useState<string | null>(initial?.date ?? todayISO());
+  const [date, setDate] = useState<string | null>(initial?.date ?? defaultDate ?? todayISO());
   const [title, setTitle] = useState(seed?.title ?? '');
   const [note, setNote] = useState(seed?.note ?? '');
   const [removedIds, setRemovedIds] = useState<string[]>([]);

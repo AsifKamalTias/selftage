@@ -8,8 +8,10 @@ A personal income and expense tracker that keeps everything on your device. Buil
 - **Accounts** — cash, bank, mobile banking, cheque and your own types, each with an opening balance and running balance.
 - **Ledger** — every transaction is posted automatically as a debit or credit with a running balance, filterable by account and period.
 - **Ledger report** — statements per account or combined, with opening and closing balances, exportable as PDF or CSV.
-- **Recurring** — repeat any income or expense daily, weekly, monthly or yearly with an "every N" interval and a start date; entries post themselves (catching up anything missed while the app was closed) and each can be paused, edited or deleted.
+- **Recurring** — repeat any income or expense daily, weekly, monthly or yearly with an "every N" interval and a start date. Automatic entries post themselves (catching up anything missed while the app was closed); manual ones wait in a list until you mark them paid or skip them, so an unpaid bill never counts as spent. Each can be paused, edited or deleted.
 - **Budgets** — daily, weekly or monthly limits, overall or per expense type, with a warning as you approach the limit and an alert when you pass it.
+- **Groups** — bundle entries that belong together (a trip, a project, an event) across types, sources and accounts. Create one without leaving the entry form, point a recurring rule at one, filter history by it, and see what each adds up to on the dashboard and in the group report.
+- **Calendar** — a month at a glance with a bar per day for income and expense; pick any day to see its totals, its entries, the recurring due on it and the budgets covering it, and add an entry straight onto that day.
 - **Goals** — set a target amount, date and note, then hold money from an account towards it. Held money stays in the account but stops counting as available, so you can see progress as a ring, a percentage and what to set aside per day, week or month. Release it back whenever you like, or mark the goal complete once it is fully funded to spend the reserve as a recorded expense.
 - **Dashboard** — balance, income and expense totals with period comparison, cash-flow and running-total charts, breakdown by type and source, account summaries and recent activity.
 - **History** — search and filter by kind, date range, account, type, source, amount and attachments.
@@ -50,8 +52,9 @@ src/
   app/          expo-router routes (screens only)
   components/   design system, charts, navigation
   db/           schema, migrations, query hooks
-  features/     accounts, attachments, budgets, catalog, dashboard,
-                export, goals, ledger, recurring, settings, transactions
+  features/     accounts, attachments, budgets, calendar, catalog,
+                dashboard, export, goals, groups, ledger, recurring,
+                settings, transactions
   lib/          money, dates, ids, haptics
   theme/        tokens and theme provider
 ```

@@ -129,6 +129,7 @@ function RootStack() {
         options={{ presentation: modal, title: 'Edit transaction', animation: 'slide_from_bottom' }}
       />
       <Stack.Screen name="transaction/[id]/index" options={{ title: 'Transaction' }} />
+      <Stack.Screen name="calendar" options={{ title: 'Calendar' }} />
       <Stack.Screen name="goals/index" options={{ title: 'Goals' }} />
       <Stack.Screen name="goals/[id]" options={{ title: 'Goal' }} />
       <Stack.Screen name="goals/form" options={{ presentation: modal, title: 'Goal' }} />

@@ -174,19 +174,26 @@ export default function TransactionsScreen() {
         subtitle="Income & expenses"
         left={<MenuButton />}
         right={
-          <View>
+          <View style={styles.headerActions}>
             <IconButton
-              icon="options-outline"
-              accessibilityLabel={`Filters${filterCount ? `, ${filterCount} active` : ''}`}
-              onPress={() => setSheetOpen(true)}
+              icon="calendar-outline"
+              accessibilityLabel="Open the calendar"
+              onPress={() => router.push('/calendar')}
             />
-            {filterCount > 0 ? (
-              <View style={[styles.badge, { backgroundColor: colors.primary }]}>
-                <Text variant="micro" weight="bold" color="onPrimary">
-                  {filterCount}
-                </Text>
-              </View>
-            ) : null}
+            <View>
+              <IconButton
+                icon="options-outline"
+                accessibilityLabel={`Filters${filterCount ? `, ${filterCount} active` : ''}`}
+                onPress={() => setSheetOpen(true)}
+              />
+              {filterCount > 0 ? (
+                <View style={[styles.badge, { backgroundColor: colors.primary }]}>
+                  <Text variant="micro" weight="bold" color="onPrimary">
+                    {filterCount}
+                  </Text>
+                </View>
+              ) : null}
+            </View>
           </View>
         }
       />
@@ -351,6 +358,11 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     paddingTop: spacing.lg,
     paddingBottom: spacing.sm,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
   },
   badge: {
     position: 'absolute',

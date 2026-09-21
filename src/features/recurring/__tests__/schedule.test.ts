@@ -7,6 +7,7 @@ import {
   nextOccurrenceAfter,
   occurrenceAt,
   occurrencesThrough,
+  occursOn,
 } from '../schedule';
 
 describe('occurrenceAt', () => {
@@ -126,5 +127,33 @@ describe('describeNextRun', () => {
       'Overdue since 10 Sep 2026'
     );
     expect(describeNextRun('2026-09-20', '2026-09-17', 'DD MMM YYYY')).toBe('Next on 20 Sep 2026');
+  });
+});
+
+describe('occursOn', () => {
+  const monthly = { startDate: '2026-01-31', frequency: 'monthly' as const, intervalCount: 1 };
+
+  it('matches the start date', () => {
+    expect(occursOn(monthly, '2026-01-31')).toBe(true);
+  });
+
+  it('rejects dates before the start', () => {
+    expect(occursOn(monthly, '2026-01-30')).toBe(false);
+  });
+
+  it('follows the clamped anchor day', () => {
+    expect(occursOn(monthly, '2026-02-28')).toBe(true);
+    expect(occursOn(monthly, '2026-03-31')).toBe(true);
+    expect(occursOn(monthly, '2026-03-28')).toBe(false);
+  });
+
+  it('honours the interval', () => {
+    const everyOtherWeek = {
+      startDate: '2026-09-07',
+      frequency: 'weekly' as const,
+      intervalCount: 2,
+    };
+    expect(occursOn(everyOtherWeek, '2026-09-21')).toBe(true);
+    expect(occursOn(everyOtherWeek, '2026-09-14')).toBe(false);
   });
 });

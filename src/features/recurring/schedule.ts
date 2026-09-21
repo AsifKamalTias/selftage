@@ -96,6 +96,17 @@ export function firstOccurrenceOnOrAfter(
   return date;
 }
 
+/** Whether the rule has an occurrence on exactly `date`. */
+export function occursOn(
+  rule: { startDate: string; frequency: RecurrenceFrequency; intervalCount: number },
+  date: string
+): boolean {
+  if (date < rule.startDate) return false;
+  return (
+    firstOccurrenceOnOrAfter(rule.startDate, rule.frequency, rule.intervalCount, date) === date
+  );
+}
+
 /** The occurrence strictly after `date`. */
 export function nextOccurrenceAfter(
   rule: { startDate: string; frequency: RecurrenceFrequency; intervalCount: number },

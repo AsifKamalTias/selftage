@@ -106,6 +106,13 @@ function AppMenu({ visible, onClose }: { visible: boolean; onClose: () => void }
       title: 'Plan',
       items: [
         {
+          icon: 'calendar-outline',
+          color: '#8B5CF6',
+          title: 'Calendar',
+          subtitle: 'Any day at a glance',
+          href: '/calendar',
+        },
+        {
           icon: 'speedometer-outline',
           color: '#6366F1',
           title: 'Budgets',
