@@ -10,6 +10,7 @@ import { insertTransaction } from '@/features/transactions/repository';
 import { todayISO } from '@/lib/date';
 import { newId } from '@/lib/id';
 
+import { queueOccurrence } from './occurrences';
 import { listDueRules, markRecurringRun, setRecurringActive } from './repository';
 import { nextOccurrenceAfter, occurrencesThrough } from './schedule';
 
@@ -26,12 +27,14 @@ export interface RecurringPosting {
 
 export interface RecurringRunResult {
   created: RecurringPosting[];
+  /** Manual occurrences queued for the user to mark paid. */
+  queued: RecurringPosting[];
   /** Rules paused because they could no longer post (e.g. the account was archived). */
   paused: { id: string; name: string; reason: string }[];
   budgetAlerts: BudgetAlert[];
 }
 
-const EMPTY: RecurringRunResult = { created: [], paused: [], budgetAlerts: [] };
+const EMPTY: RecurringRunResult = { created: [], queued: [], paused: [], budgetAlerts: [] };
 
 async function postOccurrences(
   db: SQLiteDatabase,
@@ -68,9 +71,24 @@ async function postOccurrences(
   return posted;
 }
 
+/** Manual rules do not touch any account: each due date waits in the pending list. */
+async function queueOccurrences(
+  db: SQLiteDatabase,
+  rule: RecurringRule,
+  dates: string[]
+): Promise<RecurringPosting[]> {
+  const queued: RecurringPosting[] = [];
+  for (const date of dates) {
+    await queueOccurrence(db, rule.id, date);
+    queued.push({ ruleId: rule.id, name: rule.name, kind: rule.kind, amount: rule.amount, date });
+  }
+  return queued;
+}
+
 /**
- * Posts every occurrence due on or before `today`, including ones missed while the app was
- * closed. Safe to call repeatedly: a rule only advances past dates it has actually posted.
+ * Handles every occurrence due on or before `today`, including ones missed while the app
+ * was closed: automatic rules post them, manual rules queue them for confirmation. Safe to
+ * call repeatedly — a rule only advances past dates it has actually handled.
  */
 export async function runDueRecurring(
   db: SQLiteDatabase,
@@ -84,13 +102,18 @@ export async function runDueRecurring(
 
   const budgetsBefore = await budgetHealthSnapshot(db);
   const created: RecurringPosting[] = [];
+  const queued: RecurringPosting[] = [];
   const paused: RecurringRunResult['paused'] = [];
 
   for (const rule of due) {
     const dates = occurrencesThrough(rule, rule.nextDate, today, maxPerRule);
     if (dates.length === 0) continue;
     try {
-      created.push(...(await postOccurrences(db, rule, dates)));
+      if (rule.mode === 'manual') {
+        queued.push(...(await queueOccurrences(db, rule, dates)));
+      } else {
+        created.push(...(await postOccurrences(db, rule, dates)));
+      }
       const lastDate = dates[dates.length - 1];
       await markRecurringRun(db, rule.id, lastDate, nextOccurrenceAfter(rule, lastDate));
     } catch (error) {
@@ -106,6 +129,7 @@ export async function runDueRecurring(
 
   return {
     created,
+    queued,
     paused,
     budgetAlerts: created.length > 0 ? await budgetAlertsSince(db, budgetsBefore) : [],
   };

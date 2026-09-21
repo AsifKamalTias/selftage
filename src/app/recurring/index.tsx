@@ -9,8 +9,9 @@ import { ListSkeleton } from '@/components/ui/loader';
 import { Screen } from '@/components/ui/screen';
 import { Section } from '@/components/ui/section';
 import { Text } from '@/components/ui/text';
+import { DueList } from '@/features/recurring/components/due-list';
 import { RecurringRow } from '@/features/recurring/components/recurring-row';
-import { useRecurringRules } from '@/features/recurring/hooks';
+import { usePendingOccurrences, useRecurringRules } from '@/features/recurring/hooks';
 import { useSettings } from '@/features/settings/settings-provider';
 import { formatDate, todayISO } from '@/lib/date';
 import { spacing } from '@/theme/tokens';
@@ -18,10 +19,18 @@ import { spacing } from '@/theme/tokens';
 export default function RecurringScreen() {
   const { settings } = useSettings();
   const { data, isPending } = useRecurringRules();
+  const pending = usePendingOccurrences();
   const rules = data ?? [];
   const active = rules.filter((rule) => rule.isActive);
   const paused = rules.filter((rule) => !rule.isActive);
   const upcoming = active[0];
+  const manualCount = active.filter((rule) => rule.mode === 'manual').length;
+  const activeCaption =
+    manualCount === 0
+      ? 'Posted automatically on their date'
+      : manualCount === active.length
+        ? 'Queued on their date for you to confirm'
+        : 'Posted on their date, or queued for you to confirm';
 
   const openForm = (id?: string) =>
     router.push(id ? { pathname: '/recurring/form', params: { id } } : '/recurring/form');
@@ -41,13 +50,15 @@ export default function RecurringScreen() {
         }}
       />
 
+      <DueList occurrences={pending.data ?? []} />
+
       {isPending ? (
         <ListSkeleton rows={3} />
       ) : rules.length === 0 ? (
         <EmptyState
           icon="repeat"
           title="No recurring yet"
-          message="Set up salary, rent, subscriptions or any entry that repeats. They are added automatically on their date — daily, weekly, monthly or yearly."
+          message="Set up salary, rent, subscriptions or any entry that repeats — daily, weekly, monthly or yearly. Let each one post itself, or mark it paid yourself when the money actually moves."
           action={{ label: 'Add recurring', icon: 'add', onPress: () => openForm() }}
         />
       ) : (
@@ -67,7 +78,7 @@ export default function RecurringScreen() {
           </Card>
 
           {active.length > 0 ? (
-            <Section title="Active" caption="Posted automatically on their date">
+            <Section title="Active" caption={activeCaption}>
               <View style={styles.list}>
                 {active.map((rule) => (
                   <RecurringRow key={rule.id} rule={rule} onPress={() => openForm(rule.id)} />

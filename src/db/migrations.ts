@@ -215,6 +215,27 @@ CREATE INDEX idx_transactions_group ON transactions (group_id);
 ALTER TABLE recurring_rules ADD COLUMN group_id TEXT REFERENCES groups (id) ON DELETE SET NULL;
 `;
 
+const SCHEMA_V6 = `
+-- Automatic rules post by themselves; manual rules queue an occurrence the user
+-- marks paid (or skips) once the money has actually moved.
+ALTER TABLE recurring_rules ADD COLUMN mode TEXT NOT NULL DEFAULT 'auto'
+  CHECK (mode IN ('auto', 'manual'));
+
+CREATE TABLE recurring_occurrences (
+  id TEXT PRIMARY KEY NOT NULL,
+  rule_id TEXT NOT NULL REFERENCES recurring_rules (id) ON DELETE CASCADE,
+  due_date TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'paid', 'skipped')),
+  -- Set when marking paid; cleared if that entry is later deleted.
+  transaction_id TEXT REFERENCES transactions (id) ON DELETE SET NULL,
+  created_at TEXT NOT NULL,
+  resolved_at TEXT
+);
+-- One row per rule per due date, so a repeated catch-up cannot queue duplicates.
+CREATE UNIQUE INDEX idx_recurring_occurrences_due ON recurring_occurrences (rule_id, due_date);
+CREATE INDEX idx_recurring_occurrences_pending ON recurring_occurrences (status, due_date);
+`;
+
 /**
  * Append-only list. Never edit a shipped migration; add a new version instead.
  * Each migration runs in its own transaction together with the version bump.
@@ -249,6 +270,12 @@ const MIGRATIONS: readonly Migration[] = [
     version: 5,
     up: async (tx) => {
       await tx.execAsync(SCHEMA_V5);
+    },
+  },
+  {
+    version: 6,
+    up: async (tx) => {
+      await tx.execAsync(SCHEMA_V6);
     },
   },
 ];

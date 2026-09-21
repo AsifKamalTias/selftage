@@ -33,9 +33,19 @@ export function RecurringRow({ rule, onPress }: { rule: RecurringRule; onPress: 
             <Text weight="semibold" numberOfLines={1}>
               {rule.name}
             </Text>
-            <Text variant="caption" color="textMuted" numberOfLines={1}>
-              {describeRecurrence(rule.frequency, rule.intervalCount, rule.startDate)}
-            </Text>
+            <View style={styles.subtitle}>
+              <Text variant="caption" color="textMuted" numberOfLines={1} style={styles.flex}>
+                {describeRecurrence(rule.frequency, rule.intervalCount, rule.startDate)}
+              </Text>
+              {rule.mode === 'manual' ? (
+                <View style={[styles.mode, { backgroundColor: colors.surfaceMuted }]}>
+                  <Icon name="hand-left" size={10} color="textSecondary" />
+                  <Text variant="micro" weight="semibold" color="textSecondary">
+                    Manual
+                  </Text>
+                </View>
+              ) : null}
+            </View>
           </View>
           <Amount value={rule.amount} kind={rule.kind} signed colorize />
         </View>
@@ -63,7 +73,11 @@ export function RecurringRow({ rule, onPress }: { rule: RecurringRule; onPress: 
           </View>
         </View>
 
-        {rule.postedCount ? (
+        {rule.pendingCount ? (
+          <Text variant="micro" color="warning" weight="semibold">
+            {rule.pendingCount} waiting to be marked {rule.kind === 'income' ? 'received' : 'paid'}
+          </Text>
+        ) : rule.postedCount ? (
           <Text variant="micro" color="textMuted">
             {rule.postedCount} entr{rule.postedCount === 1 ? 'y' : 'ies'} posted so far
           </Text>
@@ -87,7 +101,23 @@ const styles = StyleSheet.create({
   },
   titles: {
     flex: 1,
-    gap: 1,
+    gap: 2,
+  },
+  subtitle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs + 2,
+  },
+  flex: {
+    flexShrink: 1,
+  },
+  mode: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: spacing.xs + 2,
+    paddingVertical: 1,
+    borderRadius: radius.pill,
   },
   footer: {
     flexDirection: 'row',

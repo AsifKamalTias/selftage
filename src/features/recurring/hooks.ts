@@ -1,6 +1,14 @@
 import { useDbMutation, useDbQuery } from '@/db/hooks';
 
 import {
+  countPendingOccurrences,
+  listPendingOccurrences,
+  markOccurrencePaid,
+  restoreOccurrence,
+  skipOccurrence,
+  type MarkPaidInput,
+} from './occurrences';
+import {
   createRecurringRule,
   deleteRecurringRule,
   getRecurringRule,
@@ -36,4 +44,26 @@ export function useToggleRecurringRule() {
 
 export function useDeleteRecurringRule() {
   return useDbMutation((db, id: string) => deleteRecurringRule(db, id));
+}
+
+export function usePendingOccurrences({ ruleId }: { ruleId?: string } = {}) {
+  return useDbQuery(['recurring', 'pending', ruleId ?? 'all'], (db) =>
+    listPendingOccurrences(db, { ruleId })
+  );
+}
+
+export function usePendingOccurrenceCount() {
+  return useDbQuery(['recurring', 'pending-count'], countPendingOccurrences);
+}
+
+export function useMarkOccurrencePaid() {
+  return useDbMutation((db, input: MarkPaidInput) => markOccurrencePaid(db, input));
+}
+
+export function useSkipOccurrence() {
+  return useDbMutation((db, id: string) => skipOccurrence(db, id));
+}
+
+export function useRestoreOccurrence() {
+  return useDbMutation((db, id: string) => restoreOccurrence(db, id));
 }

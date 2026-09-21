@@ -20,6 +20,7 @@ import {
   RECURRENCE_FREQUENCIES,
   type EntryKind,
   type RecurrenceFrequency,
+  type RecurrenceMode,
   type RecurringRule,
 } from '@/db/types';
 import { useAccounts } from '@/features/accounts/hooks';
@@ -75,6 +76,7 @@ function RecurringForm({ existing }: { existing: RecurringRule | null }) {
   const [frequency, setFrequency] = useState<RecurrenceFrequency>(existing?.frequency ?? 'monthly');
   const [intervalCount, setIntervalCount] = useState(existing?.intervalCount ?? 1);
   const [startDate, setStartDate] = useState<string | null>(existing?.startDate ?? todayISO());
+  const [mode, setMode] = useState<RecurrenceMode>(existing?.mode ?? 'auto');
   const [groupId, setGroupId] = useState<string | null>(existing?.groupId ?? null);
   const [note, setNote] = useState(existing?.note ?? '');
   const [errors, setErrors] = useState<{
@@ -131,6 +133,7 @@ function RecurringForm({ existing }: { existing: RecurringRule | null }) {
           accountId: accountId!,
           note: note.trim() || null,
           groupId,
+          mode,
           frequency,
           intervalCount,
           startDate: startDate!,
@@ -280,6 +283,28 @@ function RecurringForm({ existing }: { existing: RecurringRule | null }) {
         onChange={setGroupId}
         hint="Group every entry this posts (optional)"
       />
+
+      <View style={styles.group}>
+        <Text variant="label" color="textSecondary">
+          How it is recorded
+        </Text>
+        <SegmentedControl
+          size="sm"
+          value={mode}
+          onChange={setMode}
+          options={[
+            { value: 'auto', label: 'Automatic', icon: 'flash-outline' },
+            { value: 'manual', label: 'Manual', icon: 'hand-left-outline' },
+          ]}
+        />
+        <Text variant="caption" color="textMuted">
+          {mode === 'auto'
+            ? `Each entry is posted on its date and the account is ${
+                kind === 'income' ? 'credited' : 'debited'
+              } straight away.`
+            : 'Each date waits in a list until you mark it paid — nothing touches the account before that.'}
+        </Text>
+      </View>
 
       <View style={styles.group}>
         <Text variant="label" color="textSecondary">

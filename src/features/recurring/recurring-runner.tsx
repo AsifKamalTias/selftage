@@ -39,6 +39,16 @@ export function useRecurringRun() {
         );
         presentBudgetAlerts(result.budgetAlerts);
       }
+      if (result.queued.length > 0) {
+        await queryClient.invalidateQueries({ queryKey: [DB_QUERY_ROOT] });
+        const [first] = result.queued;
+        toast.show(
+          result.queued.length > 1
+            ? `${result.queued.length} recurring are waiting to be marked paid`
+            : `${first.name} is waiting to be marked paid`,
+          'info'
+        );
+      }
       if (result.paused.length > 0) {
         await queryClient.invalidateQueries({ queryKey: [DB_QUERY_ROOT] });
         toast.error(`${result.paused[0].name} was paused: ${result.paused[0].reason}`);

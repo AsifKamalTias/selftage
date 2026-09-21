@@ -217,6 +217,9 @@ export const RECURRENCE_FREQUENCIES: readonly RecurrenceFrequency[] = [
   'yearly',
 ];
 
+/** Automatic rules post by themselves; manual ones wait to be marked paid. */
+export type RecurrenceMode = 'auto' | 'manual';
+
 /** A template that posts a transaction every `intervalCount` × `frequency`. */
 export interface RecurringRule {
   id: string;
@@ -232,6 +235,7 @@ export interface RecurringRule {
   accountId: string;
   accountName: string;
   note: string | null;
+  mode: RecurrenceMode;
   /** Optional grouping applied to every entry this rule posts. */
   groupId: string | null;
   groupName: string | null;
@@ -245,8 +249,36 @@ export interface RecurringRule {
   isActive: boolean;
   /** Transactions posted by this rule so far (list queries only). */
   postedCount?: number;
+  /** Manual occurrences still waiting to be marked paid (list queries only). */
+  pendingCount?: number;
   createdAt: string;
   updatedAt: string;
+}
+
+export type OccurrenceStatus = 'pending' | 'paid' | 'skipped';
+
+/** One dated instance of a manual rule, waiting for the user to confirm it was paid. */
+export interface RecurringOccurrence {
+  id: string;
+  ruleId: string;
+  dueDate: string;
+  status: OccurrenceStatus;
+  transactionId: string | null;
+  createdAt: string;
+  resolvedAt: string | null;
+  /** Denormalised rule details, so a due list needs one query. */
+  name: string;
+  kind: EntryKind;
+  amount: number;
+  categoryId: string;
+  categoryName: string;
+  categoryIcon: string;
+  categoryColor: string;
+  sourceId: string | null;
+  accountId: string;
+  accountName: string;
+  groupId: string | null;
+  note: string | null;
 }
 
 export type BudgetPeriod = 'daily' | 'weekly' | 'monthly';
