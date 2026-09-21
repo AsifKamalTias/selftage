@@ -300,17 +300,32 @@ function AppMenu({ visible, onClose }: { visible: boolean; onClose: () => void }
               ))}
             </ScrollView>
 
-            <PressableScale
-              scaleTo={0.98}
-              onPress={() => go('/settings')}
-              accessibilityLabel="Settings"
-              style={[styles.footer, { borderTopColor: colors.border }]}>
-              <Icon name="settings-outline" size={18} color="textSecondary" />
-              <Text variant="callout" weight="medium" color="textSecondary" style={styles.rowText}>
-                Settings
-              </Text>
-              <Icon name="chevron-forward" size={16} color="textMuted" />
-            </PressableScale>
+            <View
+              style={[
+                styles.footer,
+                { borderTopColor: colors.border, backgroundColor: colors.background },
+              ]}>
+              <PressableScale
+                scaleTo={0.98}
+                onPress={() => go('/settings')}
+                accessibilityLabel="Settings, preferences and reminders"
+                style={[
+                  styles.card,
+                  styles.row,
+                  { backgroundColor: colors.surface, borderColor: colors.border },
+                ]}>
+                <IconBadge icon="settings-outline" color="#64748B" size={38} />
+                <View style={styles.rowText}>
+                  <Text weight="medium" numberOfLines={1}>
+                    Settings
+                  </Text>
+                  <Text variant="caption" color="textMuted" numberOfLines={1}>
+                    Preferences and reminders
+                  </Text>
+                </View>
+                <Icon name="chevron-forward" size={16} color="textMuted" />
+              </PressableScale>
+            </View>
           </Animated.View>
         ) : null}
       </View>
@@ -366,9 +381,6 @@ const styles = StyleSheet.create({
     marginLeft: spacing.md + 38 + spacing.md,
   },
   footer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
     borderTopWidth: StyleSheet.hairlineWidth,
     paddingTop: spacing.md,
   },

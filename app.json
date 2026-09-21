@@ -68,7 +68,8 @@
           "color": "#4F46E5",
           "defaultChannel": "reminders"
         }
-      ]
+      ],
+      "expo-sharing"
     ],
     "experiments": {
       "typedRoutes": true,
