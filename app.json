@@ -2,6 +2,7 @@
   "expo": {
     "name": "Selftage",
     "slug": "selftage",
+    "owner": "varvine",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -9,10 +10,10 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.selftage.app"
+      "bundleIdentifier": "com.varvine.selftage"
     },
     "android": {
-      "package": "com.selftage.app",
+      "package": "com.varvine.selftage",
       "adaptiveIcon": {
         "backgroundColor": "#6366F1",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -72,6 +73,23 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {
+        "headers": {
+          "Cross-Origin-Embedder-Policy": "credentialless",
+          "Cross-Origin-Opener-Policy": "same-origin"
+        }
+      },
+      "eas": {
+        "projectId": "3d378fc8-e1c8-4c38-a7f2-156815fea625"
+      }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/3d378fc8-e1c8-4c38-a7f2-156815fea625"
     }
   }
 }

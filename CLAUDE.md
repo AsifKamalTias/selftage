@@ -38,8 +38,12 @@ eas build --profile development --platform android
 
 `eas.json` holds three profiles: `development` (dev client, internal APK), `preview`
 (internal APK for testers) and `production` (app bundle, remote version numbers).
-`android.package` and `ios.bundleIdentifier` are `com.selftage.app`; change them before
-the first store submission, never after.
+
+The app publishes as `@varvine/selftage` with the identifier `com.varvine.selftage` on
+both platforms. Changing either is free until the first store submission and permanent
+after it. `/android` and `/ios` are generated, so after touching `android.package` or
+`ios.bundleIdentifier` run `npx expo prebuild --clean` — an existing folder keeps the old
+identifier.
 
 ### Typed routes on Windows
 
