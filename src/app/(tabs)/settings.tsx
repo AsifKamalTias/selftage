@@ -412,6 +412,12 @@ export default function SettingsScreen() {
             onPress={exportTransactions.isPending ? undefined : handleExport}
           />
           <ListRow
+            icon="pulse-outline"
+            title="Diagnostics"
+            subtitle="Warnings and errors recorded this session"
+            onPress={() => router.push('/diagnostics')}
+          />
+          <ListRow
             icon="trash-outline"
             title="Erase all data"
             subtitle="Delete everything and start fresh"

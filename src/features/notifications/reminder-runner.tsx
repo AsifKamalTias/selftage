@@ -8,6 +8,9 @@ import { useSettings } from '@/features/settings/settings-provider';
 
 import { collectReminders, planReminders } from './reminders';
 import { applyReminders, clearReminders } from './scheduler';
+import { logger } from '@/lib/logger';
+
+const log = logger('reminders');
 
 /**
  * Rebuilds the whole reminder queue from what is currently due. Cheap enough to run on
@@ -30,7 +33,7 @@ export function useReminderSync() {
       });
       return await applyReminders(planReminders(events, { time: notificationTime }));
     } catch (error) {
-      console.warn('Could not refresh reminders', error);
+      log.error('Could not refresh reminders', error);
       return 0;
     }
   }, [db, notificationsEnabled, notifyRecurring, notifyOutstanding, notificationTime]);

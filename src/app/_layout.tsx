@@ -4,7 +4,7 @@ import { Inter_400Regular } from '@expo-google-fonts/inter/400Regular';
 import { Inter_500Medium } from '@expo-google-fonts/inter/500Medium';
 import { Inter_600SemiBold } from '@expo-google-fonts/inter/600SemiBold';
 import { Inter_700Bold } from '@expo-google-fonts/inter/700Bold';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { SQLiteProvider } from 'expo-sqlite';
@@ -16,11 +16,14 @@ import { AppErrorBoundary } from '@/components/app-error-boundary';
 import { AppMenuProvider } from '@/components/navigation/app-menu';
 import { AnimatedSplash } from '@/components/brand/animated-splash';
 import { ToastProvider } from '@/components/ui/toast';
-import { DATABASE_NAME } from '@/db/client';
+import { DATABASE_NAME, DomainError } from '@/db/client';
 import { migrateDatabase } from '@/db/migrations';
 import { ReminderRunner } from '@/features/notifications/reminder-runner';
 import { RecurringRunner } from '@/features/recurring/recurring-runner';
 import { SettingsProvider, useSettings } from '@/features/settings/settings-provider';
+import { installGlobalErrorHandlers } from '@/lib/global-errors';
+import { startLogPersistence } from '@/lib/log-persistence';
+import { logger } from '@/lib/logger';
 import { ThemeProvider, useTheme } from '@/theme/theme-provider';
 import { fonts } from '@/theme/tokens';
 
@@ -37,14 +40,45 @@ if (!isRunningInExpoGo()) {
   SplashScreen.setOptions({ duration: 250, fade: true });
 }
 
+const log = logger('app');
+
+installGlobalErrorHandlers();
+void startLogPersistence();
+
 function createQueryClient() {
   return new QueryClient({
+    // One place to notice every failed read or write; screens still show their own message.
+    queryCache: new QueryCache({
+      onError: (error, query) => {
+        report('Query failed', error, describeKey(query.queryKey));
+      },
+    }),
+    mutationCache: new MutationCache({
+      onError: (error, _variables, _context, mutation) => {
+        report('Mutation failed', error, describeKey(mutation.options.mutationKey));
+      },
+    }),
     defaultOptions: {
       // Data is local: never pause for connectivity, and refetch only when invalidated.
       queries: { networkMode: 'always', staleTime: Infinity, retry: false },
       mutations: { networkMode: 'always', retry: false },
     },
   });
+}
+
+/**
+ * A DomainError is a rule the person ran into — a duplicate name, an amount over the
+ * limit — and the screen already tells them. Recording those as errors would drown the
+ * genuine faults, so they are kept as warnings.
+ */
+function report(message: string, error: unknown, key: string) {
+  if (error instanceof DomainError) log.warn(message, error, { key, expected: true });
+  else log.error(message, error, { key });
+}
+
+/** Keys hold ids, not record contents, so they are safe to log. */
+function describeKey(key: readonly unknown[] | undefined): string {
+  return key ? key.map((part) => String(part)).join('/') : 'unknown';
 }
 
 export default function RootLayout() {
@@ -167,6 +201,7 @@ function RootStack() {
       <Stack.Screen name="reports/ledger" options={{ title: 'Ledger report' }} />
       <Stack.Screen name="reports/groups" options={{ title: 'Group report' }} />
       <Stack.Screen name="currency" options={{ title: 'Currency' }} />
+      <Stack.Screen name="diagnostics" options={{ title: 'Diagnostics' }} />
     </Stack>
   );
 }

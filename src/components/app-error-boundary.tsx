@@ -4,6 +4,15 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { LogoMark } from '@/components/brand/logo-mark';
 import { brandSplashBackground, fonts } from '@/theme/tokens';
+import { logger } from '@/lib/logger';
+
+const log = logger('app');
+
+/** The first frames are the ones that point at the broken component. */
+function shortStack(stack: string | null | undefined): string | undefined {
+  if (!stack) return undefined;
+  return stack.split('\n').slice(0, 8).join('\n');
+}
 
 interface State {
   error: Error | null;
@@ -28,7 +37,9 @@ export class AppErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    console.error('Fatal app error', error, info.componentStack);
+    log.error('Fatal app error', error, {
+      componentStack: shortStack(info.componentStack),
+    });
     this.props.onError?.(error);
   }
 
@@ -46,7 +57,8 @@ export class AppErrorBoundary extends Component<Props, State> {
           style={styles.button}
           accessibilityRole="button"
           onPress={() => {
-            reloadAppAsync('Retry after fatal error').catch(() => {
+            reloadAppAsync('Retry after fatal error').catch((error: unknown) => {
+              log.warn('Could not reload the app; clearing the boundary instead', error);
               this.setState({ error: null });
             });
           }}>

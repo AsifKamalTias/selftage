@@ -10,6 +10,9 @@ import { useSettings } from '@/features/settings/settings-provider';
 import { todayISO } from '@/lib/date';
 
 import { runDueRecurring } from './runner';
+import { logger } from '@/lib/logger';
+
+const log = logger('recurring');
 
 /**
  * Posts whatever recurring entries are due and reports the result. Safe to call at any
@@ -54,7 +57,7 @@ export function useRecurringRun() {
         toast.error(`${result.paused[0].name} was paused: ${result.paused[0].reason}`);
       }
     } catch (error) {
-      console.warn('Recurring run failed', error);
+      log.error('Recurring run failed', error);
     } finally {
       running.current = false;
     }

@@ -4,6 +4,9 @@ import type { NewAttachment } from '@/features/transactions/repository';
 import { newId } from '@/lib/id';
 
 import { extensionFor, type PickedFile } from './types';
+import { logger } from '@/lib/logger';
+
+const log = logger('attachments');
 
 /** Native: attachments are copied into the app's persistent document directory. */
 export const MAX_ATTACHMENT_BYTES = 25 * 1024 * 1024;
@@ -34,7 +37,7 @@ export function deleteAttachmentFiles(uris: string[]): void {
       const file = new File(uri);
       if (file.exists) file.delete();
     } catch (error) {
-      console.warn('Failed to delete attachment file', uri, error);
+      log.warn('Could not delete an attachment file', error, { uri });
     }
   }
 }
@@ -44,6 +47,6 @@ export function deleteAllAttachmentFiles(): void {
     const dir = rootDirectory();
     if (dir.exists) dir.delete();
   } catch (error) {
-    console.warn('Failed to delete attachments directory', error);
+    log.warn('Could not delete the attachments directory', error);
   }
 }

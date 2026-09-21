@@ -5,7 +5,11 @@ import { seedDefaults } from '@/db/seed';
 
 import { DEFAULT_WEEK_START, WEEK_STARTS, type WeekStart } from '@/lib/date';
 
+import { logger } from '@/lib/logger';
+
 import { sanitizeSettings, type AppSettings, type SettingKey } from './settings';
+
+const log = logger('settings');
 
 /** Single-value read for code outside React (services that need the week start). */
 export async function getWeekStart(db: SQLiteDatabase): Promise<WeekStart> {
@@ -16,7 +20,8 @@ export async function getWeekStart(db: SQLiteDatabase): Promise<WeekStart> {
   try {
     const parsed = JSON.parse(row.value);
     return WEEK_STARTS.includes(parsed as WeekStart) ? (parsed as WeekStart) : DEFAULT_WEEK_START;
-  } catch {
+  } catch (error) {
+    log.warn('Stored week start could not be parsed; using the default', error);
     return DEFAULT_WEEK_START;
   }
 }
@@ -29,8 +34,9 @@ export async function loadSettings(db: SQLiteDatabase): Promise<AppSettings> {
   for (const row of rows) {
     try {
       raw[row.key as SettingKey] = JSON.parse(row.value);
-    } catch {
-      // Ignore malformed values; sanitizeSettings falls back to defaults.
+    } catch (error) {
+      // sanitizeSettings falls back to a default; the entry explains why it changed.
+      log.warn('A stored setting could not be parsed', error, { key: row.key });
     }
   }
   const settings = sanitizeSettings(raw);

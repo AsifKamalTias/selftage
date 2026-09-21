@@ -11,8 +11,12 @@ import { todayISO } from '@/lib/date';
 import { newId } from '@/lib/id';
 
 import { queueOccurrence } from './occurrences';
+import { logger } from '@/lib/logger';
+
 import { listDueRules, markRecurringRun, setRecurringActive } from './repository';
 import { nextOccurrenceAfter, occurrencesThrough } from './schedule';
+
+const log = logger('recurring');
 
 /** Ceiling per rule per run, so a long-dormant daily rule cannot flood the ledger. */
 export const MAX_CATCHUP_PER_RULE = 60;
@@ -118,7 +122,16 @@ export async function runDueRecurring(
       await markRecurringRun(db, rule.id, lastDate, nextOccurrenceAfter(rule, lastDate));
     } catch (error) {
       // Pause rather than retry on every launch; the reason is shown on the recurring screen.
-      await setRecurringActive(db, rule.id, false, today).catch(() => {});
+      await setRecurringActive(db, rule.id, false, today).catch((pauseError: unknown) => {
+        log.error('Could not pause a failing rule; it will be retried', pauseError, {
+          ruleId: rule.id,
+        });
+      });
+      log.error('A recurring rule failed and was paused', error, {
+        ruleId: rule.id,
+        mode: rule.mode,
+        dates: dates.length,
+      });
       paused.push({
         id: rule.id,
         name: rule.name,

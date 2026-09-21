@@ -1,6 +1,9 @@
 import { File, Paths } from 'expo-file-system';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
+import { logger } from '@/lib/logger';
+
+const log = logger('export');
 
 async function share(uri: string, mimeType: string, title: string) {
   if (!(await Sharing.isAvailableAsync())) {
@@ -34,7 +37,7 @@ export async function sharePdf(fileName: string, html: string) {
     new File(uri).copy(target);
     shareUri = target.uri;
   } catch (error) {
-    console.warn('Could not rename the printed report', error);
+    log.warn('Could not rename the printed report; sharing the original', error, { fileName });
   }
 
   await share(shareUri, 'application/pdf', fileName);

@@ -3,6 +3,9 @@ import type * as NotificationsModule from 'expo-notifications';
 import { Platform } from 'react-native';
 
 import type { PlannedReminder } from './reminders';
+import { logger } from '@/lib/logger';
+
+const log = logger('reminders');
 
 /**
  * Expo Go dropped Android push support in SDK 53 and throws the moment
@@ -23,7 +26,7 @@ async function notifications(): Promise<typeof NotificationsModule | null> {
   try {
     return await pending;
   } catch (error) {
-    console.warn('Notifications are unavailable', error);
+    log.warn('Notifications module could not be loaded', error);
     pending = null;
     return null;
   }
@@ -85,7 +88,7 @@ export async function applyReminders(reminders: PlannedReminder[]): Promise<numb
       });
       scheduled += 1;
     } catch (error) {
-      console.warn('Could not schedule a reminder', reminder.key, error);
+      log.warn('Could not schedule a reminder', error, { key: reminder.key });
     }
   }
   return scheduled;
