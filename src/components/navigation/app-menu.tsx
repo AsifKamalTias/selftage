@@ -2,7 +2,7 @@ import { router, type Href } from 'expo-router';
 import { createContext, use, useCallback, useState, type ReactNode } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import Animated, { SlideInLeft } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { LogoMark } from '@/components/brand/logo-mark';
 import { IconButton } from '@/components/ui/button';
@@ -81,9 +81,44 @@ function MenuRow({ item, onPress }: { item: MenuItem; onPress: () => void }) {
   );
 }
 
+/**
+ * On Android a Modal is a separate window, so insets from the navigator's provider do not
+ * apply to it — without a provider of its own the footer lands under the gesture bar.
+ * `overflow: hidden` then guarantees nothing paints outside the rounded panel.
+ */
+function MenuPanel({
+  width,
+  isDark,
+  children,
+}: {
+  width: number;
+  isDark: boolean;
+  children: ReactNode;
+}) {
+  const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
+
+  return (
+    <Animated.View
+      entering={SlideInLeft.duration(240)}
+      accessibilityViewIsModal
+      style={[
+        styles.panel,
+        {
+          backgroundColor: colors.background,
+          width,
+          paddingTop: insets.top + spacing.lg,
+          paddingBottom: insets.bottom + spacing.lg,
+        },
+        elevation(3, colors.shadow, isDark),
+      ]}>
+      {children}
+    </Animated.View>
+  );
+}
+
 function AppMenu({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const { colors, isDark } = useTheme();
-  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
 
   const accounts = useAccounts({ includeArchived: false });
@@ -241,92 +276,87 @@ function AppMenu({ visible, onClose }: { visible: boolean; onClose: () => void }
         <Pressable
           style={StyleSheet.absoluteFill}
           onPress={onClose}
-          accessibilityRole="button"
-          accessibilityLabel="Close menu"
+          // Not exposed to screen readers: the close button and the back gesture already
+          // do this, and a second "Close menu" target only adds noise.
+          accessible={false}
+          importantForAccessibility="no"
         />
         {visible ? (
-          <Animated.View
-            entering={SlideInLeft.duration(240)}
-            accessibilityViewIsModal
-            style={[
-              styles.panel,
-              {
-                backgroundColor: colors.background,
-                width: Math.min(320, width * 0.86),
-                paddingTop: insets.top + spacing.lg,
-                paddingBottom: insets.bottom + spacing.lg,
-              },
-              elevation(3, colors.shadow, isDark),
-            ]}>
-            <View style={styles.header}>
-              <View style={[styles.logo, { backgroundColor: brandGradient[0] }]}>
-                <LogoMark size={28} />
-              </View>
-              <View style={styles.rowText}>
-                <Text variant="subheading">Selftage</Text>
-                <Text variant="caption" color="textMuted">
-                  Manage your setup
-                </Text>
-              </View>
-              <IconButton
-                icon="close"
-                size={36}
-                accessibilityLabel="Close menu"
-                onPress={onClose}
-              />
-            </View>
-
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-              {groups.map((group) => (
-                <View key={group.title} style={styles.group}>
-                  <Text variant="label" color="textSecondary" uppercase>
-                    {group.title}
-                  </Text>
-                  <View
-                    style={[
-                      styles.card,
-                      { backgroundColor: colors.surface, borderColor: colors.border },
-                    ]}>
-                    {group.items.map((item, index) => (
-                      <View key={String(item.href)}>
-                        {index > 0 ? (
-                          <View style={[styles.separator, { backgroundColor: colors.border }]} />
-                        ) : null}
-                        <MenuRow item={item} onPress={() => go(item.href)} />
-                      </View>
-                    ))}
-                  </View>
+          <SafeAreaProvider style={styles.providerFill}>
+            <MenuPanel width={Math.min(320, width * 0.86)} isDark={isDark}>
+              <View style={styles.header}>
+                <View style={[styles.logo, { backgroundColor: brandGradient[0] }]}>
+                  <LogoMark size={28} />
                 </View>
-              ))}
-            </ScrollView>
-
-            <View
-              style={[
-                styles.footer,
-                { borderTopColor: colors.border, backgroundColor: colors.background },
-              ]}>
-              <PressableScale
-                scaleTo={0.98}
-                onPress={() => go('/settings')}
-                accessibilityLabel="Settings, preferences and reminders"
-                style={[
-                  styles.card,
-                  styles.row,
-                  { backgroundColor: colors.surface, borderColor: colors.border },
-                ]}>
-                <IconBadge icon="settings-outline" color="#64748B" size={38} />
                 <View style={styles.rowText}>
-                  <Text weight="medium" numberOfLines={1}>
-                    Settings
-                  </Text>
-                  <Text variant="caption" color="textMuted" numberOfLines={1}>
-                    Preferences and reminders
+                  <Text variant="subheading">Selftage</Text>
+                  <Text variant="caption" color="textMuted">
+                    Manage your setup
                   </Text>
                 </View>
-                <Icon name="chevron-forward" size={16} color="textMuted" />
-              </PressableScale>
-            </View>
-          </Animated.View>
+                <IconButton
+                  icon="close"
+                  size={36}
+                  accessibilityLabel="Close menu"
+                  onPress={onClose}
+                />
+              </View>
+
+              <ScrollView
+                style={styles.scroll}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.content}>
+                {groups.map((group) => (
+                  <View key={group.title} style={styles.group}>
+                    <Text variant="label" color="textSecondary" uppercase>
+                      {group.title}
+                    </Text>
+                    <View
+                      style={[
+                        styles.card,
+                        { backgroundColor: colors.surface, borderColor: colors.border },
+                      ]}>
+                      {group.items.map((item, index) => (
+                        <View key={String(item.href)}>
+                          {index > 0 ? (
+                            <View style={[styles.separator, { backgroundColor: colors.border }]} />
+                          ) : null}
+                          <MenuRow item={item} onPress={() => go(item.href)} />
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                ))}
+              </ScrollView>
+
+              <View
+                style={[
+                  styles.footer,
+                  { borderTopColor: colors.border, backgroundColor: colors.background },
+                ]}>
+                <PressableScale
+                  scaleTo={0.98}
+                  onPress={() => go('/settings')}
+                  accessibilityLabel="Settings, preferences and reminders"
+                  style={[
+                    styles.card,
+                    styles.row,
+                    { backgroundColor: colors.surface, borderColor: colors.border },
+                  ]}>
+                  <IconBadge icon="settings-outline" color="#64748B" size={38} />
+                  <View style={styles.rowText}>
+                    <Text weight="medium" numberOfLines={1}>
+                      Settings
+                    </Text>
+                    <Text variant="caption" color="textMuted" numberOfLines={1}>
+                      Preferences and reminders
+                    </Text>
+                  </View>
+                  <Icon name="chevron-forward" size={16} color="textMuted" />
+                </PressableScale>
+              </View>
+            </MenuPanel>
+          </SafeAreaProvider>
         ) : null}
       </View>
     </Modal>
@@ -334,12 +364,27 @@ function AppMenu({ visible, onClose }: { visible: boolean; onClose: () => void }
 }
 
 const styles = StyleSheet.create({
+  providerFill: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    // The backdrop behind still has to receive the tap that closes the menu.
+    pointerEvents: 'box-none',
+  },
   panel: {
     flex: 1,
     borderTopRightRadius: radius.xxl,
     borderBottomRightRadius: radius.xxl,
     paddingHorizontal: spacing.lg,
     gap: spacing.lg,
+    // Nothing may paint past the rounded edge, whatever the inset turns out to be.
+    overflow: 'hidden',
+  },
+  scroll: {
+    // Takes the space between the header and the footer instead of pushing it out.
+    flex: 1,
   },
   header: {
     flexDirection: 'row',
