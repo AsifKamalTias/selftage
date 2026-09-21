@@ -17,6 +17,7 @@ export const obligationInputSchema = z.object({
     .min(1, 'Add a short title')
     .max(80, 'Keep the title under 80 characters'),
   amount: z.number().int().positive('Enter an amount greater than zero'),
+  categoryId: z.string().min(1).nullable(),
   date: z.string().refine(isISODate, 'Choose a valid date'),
   dueDate: z.string().refine(isISODate, 'Choose a valid due date').nullable(),
   note: z.string().trim().max(500, 'Keep the note under 500 characters').nullable(),
@@ -69,6 +70,8 @@ const SETTLED = `
 const SELECT_COLUMNS = `
   b.id, b.contact_id AS contactId, c.name AS contactName, c.photo_uri AS contactPhotoUri,
   b.direction, b.title, b.amount, b.date, b.due_date AS dueDate, b.note,
+  b.category_id AS categoryId, cat.name AS categoryName, cat.icon AS categoryIcon,
+  cat.color AS categoryColor,
   b.created_at AS createdAt, b.updated_at AS updatedAt,
   ${SETTLED} AS settled,
   MAX(0, b.amount - ${SETTLED}) AS remaining,
@@ -80,7 +83,9 @@ const SELECT_COLUMNS = `
      JOIN transactions t ON t.installment_id = i.id
    WHERE i.obligation_id = b.id) AS paidInstallments`;
 
-const FROM_JOINS = `FROM obligations b JOIN contacts c ON c.id = b.contact_id`;
+const FROM_JOINS = `FROM obligations b
+  JOIN contacts c ON c.id = b.contact_id
+  LEFT JOIN categories cat ON cat.id = b.category_id`;
 
 type ObligationRow = Omit<Obligation, 'isSettled'> & { isSettled: number };
 
@@ -217,14 +222,16 @@ export async function createObligation(
   await runInTransaction(db, async (tx) => {
     await tx.runAsync(
       `INSERT INTO obligations
-         (id, contact_id, direction, title, amount, date, due_date, note, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         (id, contact_id, direction, title, amount, category_id, date, due_date, note,
+          created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id,
         data.contactId,
         data.direction,
         data.title,
         data.amount,
+        data.categoryId,
         data.date,
         data.dueDate,
         data.note,
@@ -266,14 +273,15 @@ export async function updateObligation(
     throw new DomainError('The amount cannot be less than what has already been settled.');
   }
   await db.runAsync(
-    `UPDATE obligations SET contact_id = ?, direction = ?, title = ?, amount = ?, date = ?,
-       due_date = ?, note = ?, updated_at = ?
+    `UPDATE obligations SET contact_id = ?, direction = ?, title = ?, amount = ?,
+       category_id = ?, date = ?, due_date = ?, note = ?, updated_at = ?
      WHERE id = ?`,
     [
       data.contactId,
       data.direction,
       data.title,
       data.amount,
+      data.categoryId,
       data.date,
       data.dueDate,
       data.note,

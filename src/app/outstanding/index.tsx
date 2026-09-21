@@ -12,8 +12,9 @@ import { Screen } from '@/components/ui/screen';
 import { Section } from '@/components/ui/section';
 import { SegmentedControl } from '@/components/ui/segmented-control';
 import { Text } from '@/components/ui/text';
-import type { ObligationDirection } from '@/db/types';
+import type { Obligation, ObligationDirection } from '@/db/types';
 import { ObligationCard } from '@/features/outstanding/components/obligation-card';
+import { SettleSheet } from '@/features/outstanding/components/settle-sheet';
 import { useObligations, useOutstandingSummary } from '@/features/outstanding/hooks';
 import { todayISO } from '@/lib/date';
 import { useTheme } from '@/theme/theme-provider';
@@ -24,6 +25,7 @@ type Tab = 'all' | ObligationDirection;
 export default function OutstandingScreen() {
   const { colors } = useTheme();
   const [tab, setTab] = useState<Tab>('all');
+  const [settling, setSettling] = useState<Obligation | null>(null);
   const summary = useOutstandingSummary();
   const { data, isPending } = useObligations({
     direction: tab === 'all' ? undefined : tab,
@@ -94,6 +96,22 @@ export default function OutstandingScreen() {
         ) : null}
       </Card>
 
+      <View style={styles.actions}>
+        <Button
+          title="Add record"
+          icon="add"
+          style={styles.flex}
+          onPress={() => router.push('/outstanding/form')}
+        />
+        <Button
+          title="Contacts"
+          icon="people-outline"
+          variant="outline"
+          style={styles.flex}
+          onPress={() => router.push('/contacts')}
+        />
+      </View>
+
       <SegmentedControl
         value={tab}
         onChange={setTab}
@@ -128,7 +146,7 @@ export default function OutstandingScreen() {
             <Section title="Overdue" caption="Past the due date and still open">
               <View style={styles.list}>
                 {overdue.map((item) => (
-                  <ObligationCard key={item.id} obligation={item} />
+                  <ObligationCard key={item.id} obligation={item} onSettle={setSettling} />
                 ))}
               </View>
             </Section>
@@ -138,7 +156,7 @@ export default function OutstandingScreen() {
             <Section title="Open" caption="Still to settle">
               <View style={styles.list}>
                 {upcoming.map((item) => (
-                  <ObligationCard key={item.id} obligation={item} />
+                  <ObligationCard key={item.id} obligation={item} onSettle={setSettling} />
                 ))}
               </View>
             </Section>
@@ -148,30 +166,16 @@ export default function OutstandingScreen() {
             <Section title="Settled" caption="Paid in full">
               <View style={styles.list}>
                 {settled.map((item) => (
-                  <ObligationCard key={item.id} obligation={item} />
+                  <ObligationCard key={item.id} obligation={item} onSettle={setSettling} />
                 ))}
               </View>
             </Section>
           ) : null}
         </>
       )}
-
-      <View style={styles.actions}>
-        <Button
-          title="Add record"
-          icon="add"
-          variant="secondary"
-          style={styles.flex}
-          onPress={() => router.push('/outstanding/form')}
-        />
-        <Button
-          title="Contacts"
-          icon="people-outline"
-          variant="outline"
-          style={styles.flex}
-          onPress={() => router.push('/contacts')}
-        />
-      </View>
+      {settling ? (
+        <SettleSheet obligation={settling} visible onClose={() => setSettling(null)} />
+      ) : null}
     </Screen>
   );
 }

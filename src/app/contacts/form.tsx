@@ -17,6 +17,7 @@ import { PermissionDeniedError, pickImages, takePhoto } from '@/features/attachm
 import type { PickedFile } from '@/features/attachments/types';
 import { ContactAvatar } from '@/features/contacts/components/contact-avatar';
 import { useContact, useDeleteContact, useSaveContact } from '@/features/contacts/hooks';
+import { countOf, verbFor } from '@/lib/text';
 import { goBack } from '@/lib/navigation';
 import { spacing } from '@/theme/tokens';
 
@@ -88,9 +89,11 @@ function ContactForm({ existing }: { existing: Contact | null }) {
     const ok = await confirm({
       title: `Delete ${existing.name}?`,
       message: existing.obligationCount
-        ? `Their ${existing.obligationCount} outstanding record${
-            existing.obligationCount === 1 ? '' : 's'
-          } go too. Payments already recorded stay in your ledger.`
+        ? `Their ${countOf(existing.obligationCount, 'outstanding record')} ${verbFor(
+            existing.obligationCount,
+            'goes',
+            'go'
+          )} too. Payments already recorded stay in your ledger.`
         : 'This contact will be removed.',
     });
     if (!ok) return;

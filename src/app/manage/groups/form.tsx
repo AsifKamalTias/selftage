@@ -23,6 +23,7 @@ import {
   useSaveGroup,
   useSetGroupArchived,
 } from '@/features/groups/hooks';
+import { countOf, verbFor } from '@/lib/text';
 import { goBack } from '@/lib/navigation';
 import { spacing } from '@/theme/tokens';
 
@@ -79,9 +80,11 @@ function GroupForm({ existing }: { existing: Group | null }) {
     const ok = await confirm({
       title: `Delete ${existing.name}?`,
       message: existing.transactionCount
-        ? `The ${existing.transactionCount} entr${
-            existing.transactionCount === 1 ? 'y' : 'ies'
-          } in this group stay in your history; they just stop being grouped.`
+        ? `The ${countOf(existing.transactionCount, 'entry')} in this group ${verbFor(
+            existing.transactionCount,
+            'stays',
+            'stay'
+          )} in your history; they just stop being grouped.`
         : 'This group will be removed.',
     });
     if (!ok) return;
@@ -115,9 +118,7 @@ function GroupForm({ existing }: { existing: Group | null }) {
             {name.trim() || 'Group name'}
           </Text>
           <Text variant="caption" color="textMuted">
-            {existing
-              ? `${existing.transactionCount} entr${existing.transactionCount === 1 ? 'y' : 'ies'}`
-              : 'A trip, a project, an event'}
+            {existing ? countOf(existing.transactionCount, 'entry') : 'A trip, a project, an event'}
           </Text>
         </View>
         {existing && existing.transactionCount > 0 ? (

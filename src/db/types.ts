@@ -317,6 +317,11 @@ export interface Obligation {
   direction: ObligationDirection;
   title: string;
   amount: number;
+  /** Income or expense type a settlement is recorded under. */
+  categoryId: string | null;
+  categoryName: string | null;
+  categoryIcon: string | null;
+  categoryColor: string | null;
   date: string;
   dueDate: string | null;
   note: string | null;

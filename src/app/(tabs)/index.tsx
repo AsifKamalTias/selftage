@@ -28,6 +28,8 @@ import { PeriodSelector } from '@/features/dashboard/components/period-selector'
 import { StatGrid } from '@/features/dashboard/components/stat-grid';
 import { useDashboard } from '@/features/dashboard/hooks';
 import { GroupBreakdown } from '@/features/groups/components/group-breakdown';
+import { GoalOverview } from '@/features/goals/components/goal-overview';
+import { OutstandingSummaryCard } from '@/features/outstanding/components/outstanding-summary-card';
 import { DueBanner } from '@/features/recurring/components/due-banner';
 import { useSettings } from '@/features/settings/settings-provider';
 import { TransactionRow } from '@/features/transactions/components/transaction-row';
@@ -175,6 +177,10 @@ export default function DashboardScreen() {
           <DueBanner />
 
           <BudgetOverview statuses={budgets.data ?? []} isPending={budgets.isPending} />
+
+          <GoalOverview />
+
+          <OutstandingSummaryCard />
 
           {hasActivity ? (
             <>

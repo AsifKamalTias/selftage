@@ -18,6 +18,7 @@ import { AnimatedSplash } from '@/components/brand/animated-splash';
 import { ToastProvider } from '@/components/ui/toast';
 import { DATABASE_NAME } from '@/db/client';
 import { migrateDatabase } from '@/db/migrations';
+import { ReminderRunner } from '@/features/notifications/reminder-runner';
 import { RecurringRunner } from '@/features/recurring/recurring-runner';
 import { SettingsProvider, useSettings } from '@/features/settings/settings-provider';
 import { ThemeProvider, useTheme } from '@/theme/theme-provider';
@@ -97,6 +98,7 @@ function ThemedApp({ onReady }: { onReady: (ready: boolean) => void }) {
       <ToastProvider>
         <AppMenuProvider>
           <RecurringRunner />
+          <ReminderRunner />
           <RootStack />
         </AppMenuProvider>
       </ToastProvider>

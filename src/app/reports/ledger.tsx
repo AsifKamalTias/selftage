@@ -1,6 +1,6 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { Amount } from '@/components/ui/amount';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,7 @@ import { LedgerSummaryCard } from '@/features/ledger/components/ledger-summary-c
 import { useLedgerStatements } from '@/features/ledger/hooks';
 import type { LedgerStatement } from '@/features/ledger/repository';
 import { useSettings } from '@/features/settings/settings-provider';
+import { useTheme } from '@/theme/theme-provider';
 import {
   formatRange,
   PERIOD_PRESETS,
@@ -37,7 +38,16 @@ function isPreset(value: string | undefined): value is PeriodPreset {
   return PERIOD_PRESETS.some((p) => p.value === value);
 }
 
-function StatementCard({ statement, hasStart }: { statement: LedgerStatement; hasStart: boolean }) {
+function StatementCard({
+  statement,
+  hasStart,
+  wide,
+}: {
+  statement: LedgerStatement;
+  hasStart: boolean;
+  /** Only a wide screen can show the five-column table. */
+  wide: boolean;
+}) {
   const { formatDate, formatAmount } = useSettings();
   const openingRow: LedgerEntry[] = hasStart
     ? [
@@ -59,73 +69,166 @@ function StatementCard({ statement, hasStart }: { statement: LedgerStatement; ha
       ]
     : [];
 
+  const entries = [...openingRow, ...statement.entries];
+
   return (
     <View style={styles.statement}>
       <Text variant="subheading">{statement.accountName}</Text>
       <LedgerSummaryCard summary={statement.summary} showOpening={hasStart} />
-      <DataTable
-        rows={[...openingRow, ...statement.entries]}
-        keyExtractor={(e) => e.id}
-        minWidth={680}
-        emptyText="No entries in this period"
-        columns={[
-          {
-            key: 'date',
-            title: 'Date',
-            width: 104,
-            render: (e) => (e.date && e.entryType !== 'opening' ? formatDate(e.date) : '—'),
-          },
-          {
-            key: 'description',
-            title: 'Description',
-            flex: 2,
-            render: (e) => (
-              <View>
-                <Text variant="caption" weight="medium" numberOfLines={1}>
-                  {e.description}
-                </Text>
-                {e.transactionId && (e.categoryName || e.sourceName || !statement.accountId) ? (
-                  <Text variant="micro" color="textMuted" numberOfLines={1}>
-                    {[e.categoryName, e.sourceName, statement.accountId ? null : e.accountName]
-                      .filter(Boolean)
-                      .join(' · ')}
+      {wide ? (
+        <DataTable
+          rows={entries}
+          keyExtractor={(e) => e.id}
+          emptyText="No entries in this period"
+          columns={[
+            {
+              key: 'date',
+              title: 'Date',
+              width: 104,
+              render: (e) => (e.date && e.entryType !== 'opening' ? formatDate(e.date) : '—'),
+            },
+            {
+              key: 'description',
+              title: 'Description',
+              flex: 2,
+              render: (e) => (
+                <View>
+                  <Text variant="caption" weight="medium" numberOfLines={1}>
+                    {e.description}
                   </Text>
-                ) : null}
-              </View>
-            ),
-          },
-          {
-            key: 'debit',
-            flex: 1.3,
-            title: 'Debit',
-            align: 'right',
-            render: (e) =>
-              e.debit ? <Amount value={e.debit} variant="caption" color="income" /> : '',
-          },
-          {
-            key: 'credit',
-            flex: 1.3,
-            title: 'Credit',
-            align: 'right',
-            render: (e) =>
-              e.credit ? <Amount value={e.credit} variant="caption" color="expense" /> : '',
-          },
-          {
-            key: 'balance',
-            flex: 1.3,
-            title: 'Balance',
-            align: 'right',
-            render: (e) => <Amount value={e.balance} variant="caption" weight="bold" />,
-          },
-        ]}
-        footer={{
-          description: 'Totals · closing',
-          debit: formatAmount(statement.summary.totalDebit),
-          credit: formatAmount(statement.summary.totalCredit),
-          balance: formatAmount(statement.summary.closingBalance),
-        }}
-      />
+                  {e.transactionId && (e.categoryName || e.sourceName || !statement.accountId) ? (
+                    <Text variant="micro" color="textMuted" numberOfLines={1}>
+                      {[e.categoryName, e.sourceName, statement.accountId ? null : e.accountName]
+                        .filter(Boolean)
+                        .join(' · ')}
+                    </Text>
+                  ) : null}
+                </View>
+              ),
+            },
+            {
+              key: 'debit',
+              flex: 1.3,
+              title: 'Debit',
+              align: 'right',
+              render: (e) =>
+                e.debit ? <Amount value={e.debit} variant="caption" color="income" /> : '',
+            },
+            {
+              key: 'credit',
+              flex: 1.3,
+              title: 'Credit',
+              align: 'right',
+              render: (e) =>
+                e.credit ? <Amount value={e.credit} variant="caption" color="expense" /> : '',
+            },
+            {
+              key: 'balance',
+              flex: 1.3,
+              title: 'Balance',
+              align: 'right',
+              render: (e) => <Amount value={e.balance} variant="caption" weight="bold" />,
+            },
+          ]}
+          footer={{
+            description: 'Totals · closing',
+            debit: formatAmount(statement.summary.totalDebit),
+            credit: formatAmount(statement.summary.totalCredit),
+            balance: formatAmount(statement.summary.closingBalance),
+          }}
+        />
+      ) : (
+        <LedgerEntryList entries={entries} statement={statement} />
+      )}
     </View>
+  );
+}
+
+/**
+ * The phone layout for a statement: five columns never fit side by side, so each entry
+ * becomes a row with its money stacked on the right, under a matching header.
+ */
+function LedgerEntryList({
+  entries,
+  statement,
+}: {
+  entries: LedgerEntry[];
+  statement: LedgerStatement;
+}) {
+  const { colors } = useTheme();
+  const { formatDate, formatAmount } = useSettings();
+
+  return (
+    <Card padded={false} style={styles.entryCard}>
+      <View style={[styles.entryHeader, { backgroundColor: colors.surfaceMuted }]}>
+        <Text variant="micro" color="textSecondary" uppercase style={styles.flex}>
+          Entry
+        </Text>
+        <Text variant="micro" color="textSecondary" uppercase>
+          In / out · balance
+        </Text>
+      </View>
+
+      {entries.length === 0 ? (
+        <Text variant="caption" color="textMuted" align="center" style={styles.entryEmpty}>
+          No entries in this period
+        </Text>
+      ) : (
+        entries.map((e) => (
+          <View key={e.id} style={[styles.entryRow, { borderTopColor: colors.border }]}>
+            <View style={styles.entryText}>
+              <Text variant="caption" weight="medium" numberOfLines={1}>
+                {e.description}
+              </Text>
+              <Text variant="micro" color="textMuted" numberOfLines={1}>
+                {[
+                  e.entryType === 'opening' || !e.date ? null : formatDate(e.date),
+                  e.categoryName,
+                  e.sourceName,
+                  statement.accountId ? null : e.accountName,
+                ]
+                  .filter(Boolean)
+                  .join(' · ') || 'Brought forward'}
+              </Text>
+            </View>
+            <View style={styles.entryAmounts}>
+              {e.debit ? (
+                <Amount value={e.debit} variant="caption" weight="semibold" color="income" />
+              ) : e.credit ? (
+                <Amount value={e.credit} variant="caption" weight="semibold" color="expense" />
+              ) : (
+                <Text variant="caption" color="textMuted">
+                  —
+                </Text>
+              )}
+              <Text variant="micro" color="textMuted" tabular>
+                {formatAmount(e.balance)}
+              </Text>
+            </View>
+          </View>
+        ))
+      )}
+
+      <View style={[styles.entryFooter, { borderTopColor: colors.borderStrong }]}>
+        <Text variant="caption" weight="bold" style={styles.flex}>
+          Totals · closing
+        </Text>
+        <View style={styles.entryAmounts}>
+          <Text variant="micro" color="textMuted" tabular>
+            <Text variant="micro" color="income">
+              {formatAmount(statement.summary.totalDebit)}
+            </Text>
+            {' / '}
+            <Text variant="micro" color="expense">
+              {formatAmount(statement.summary.totalCredit)}
+            </Text>
+          </Text>
+          <Text variant="caption" weight="bold" tabular>
+            {formatAmount(statement.summary.closingBalance)}
+          </Text>
+        </View>
+      </View>
+    </Card>
   );
 }
 
@@ -138,6 +241,9 @@ export default function LedgerReportScreen() {
   );
   const [scope, setScope] = useState<string>(params.accountId || COMBINED);
   const [exporting, setExporting] = useState<'pdf' | 'csv' | null>(null);
+  // Five columns only read well on a tablet or a wide window.
+  const { width } = useWindowDimensions();
+  const wide = width >= 700;
 
   const accounts = useAccounts();
   const range = rangeForPreset(preset, { weekStartsOn: settings.weekStartsOn });
@@ -242,6 +348,7 @@ export default function LedgerReportScreen() {
             key={statement.accountId ?? 'combined'}
             statement={statement}
             hasStart={hasStart}
+            wide={wide}
           />
         ))
       )}
@@ -250,6 +357,46 @@ export default function LedgerReportScreen() {
 }
 
 const styles = StyleSheet.create({
+  entryCard: {
+    overflow: 'hidden',
+  },
+  entryHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  entryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 2,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  entryText: {
+    flex: 1,
+    gap: 2,
+  },
+  entryAmounts: {
+    alignItems: 'flex-end',
+    gap: 2,
+  },
+  entryEmpty: {
+    paddingVertical: spacing.xl,
+  },
+  entryFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    borderTopWidth: 1.5,
+  },
+  flex: {
+    flex: 1,
+  },
   controls: {
     gap: spacing.md,
   },

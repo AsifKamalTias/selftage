@@ -1,5 +1,6 @@
 import { router } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
+import { countOf } from '@/lib/text';
 
 import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -38,7 +39,7 @@ export function BudgetOverview({
           ? 'Set limits to stay on track'
           : attention > 0
             ? `${attention} of ${statuses.length} need attention`
-            : `${statuses.length} budget${statuses.length === 1 ? '' : 's'} on track`
+            : `${countOf(statuses.length, 'budget')} on track`
       }
       action={
         statuses.length > 0

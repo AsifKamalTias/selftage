@@ -3,13 +3,17 @@ import { StyleSheet, View } from 'react-native';
 
 import { Amount } from '@/components/ui/amount';
 import { Card } from '@/components/ui/card';
+import { CardActions } from '@/components/ui/card-actions';
+import { confirm } from '@/components/ui/confirm';
 import { Icon } from '@/components/ui/icon';
 import { PressableScale } from '@/components/ui/pressable-scale';
 import { ProgressBar } from '@/components/ui/progress-bar';
 import { Text } from '@/components/ui/text';
 import type { Obligation } from '@/db/types';
+import { useDeleteObligation } from '@/features/outstanding/hooks';
 import { ContactAvatar } from '@/features/contacts/components/contact-avatar';
 import { useSettings } from '@/features/settings/settings-provider';
+import { useToast } from '@/components/ui/toast';
 import { daysBetween, todayISO } from '@/lib/date';
 import { useTheme } from '@/theme/theme-provider';
 import { radius, spacing, type ColorName } from '@/theme/tokens';
@@ -32,26 +36,34 @@ export function describeDue(
 export function ObligationCard({
   obligation,
   showContact = true,
+  onSettle,
 }: {
   obligation: Obligation;
   /** Hidden on a contact's own screen, where the name is already the heading. */
   showContact?: boolean;
+  /** Shows settle, edit and delete actions on the card when provided. */
+  onSettle?: (obligation: Obligation) => void;
 }) {
   const { colors } = useTheme();
   const { formatAmount } = useSettings();
+  const toast = useToast();
+  const remove = useDeleteObligation();
   const isReceivable = obligation.direction === 'receivable';
   const due = describeDue(obligation.dueDate);
   const progress = obligation.amount > 0 ? obligation.settled / obligation.amount : 0;
   const tint = isReceivable ? colors.income : colors.expense;
 
   return (
-    <PressableScale
-      scaleTo={0.99}
-      onPress={() => router.push({ pathname: '/outstanding/[id]', params: { id: obligation.id } })}
-      accessibilityLabel={`${obligation.title}, ${
-        isReceivable ? 'owed to you' : 'you owe'
-      }, ${formatAmount(obligation.remaining)} left`}>
-      <Card style={styles.card}>
+    <Card style={styles.card}>
+      <PressableScale
+        scaleTo={0.99}
+        style={styles.body}
+        onPress={() =>
+          router.push({ pathname: '/outstanding/[id]', params: { id: obligation.id } })
+        }
+        accessibilityLabel={`${obligation.title}, ${
+          isReceivable ? 'owed to you' : 'you owe'
+        }, ${formatAmount(obligation.remaining)} left`}>
         <View style={styles.head}>
           {showContact ? (
             <ContactAvatar
@@ -120,13 +132,64 @@ export function ObligationCard({
             </Text>
           ) : null}
         </View>
-      </Card>
-    </PressableScale>
+      </PressableScale>
+
+      {onSettle ? (
+        <CardActions
+          actions={[
+            {
+              key: 'settle',
+              label: isReceivable ? 'Receive' : 'Pay',
+              icon: 'checkmark-done',
+              disabled: obligation.isSettled,
+              onPress: () => onSettle(obligation),
+            },
+            {
+              key: 'edit',
+              label: 'Edit',
+              icon: 'create-outline',
+              onPress: () =>
+                router.push({
+                  pathname: '/outstanding/form',
+                  params: { id: obligation.id },
+                }),
+            },
+            {
+              key: 'delete',
+              label: 'Delete',
+              icon: 'trash-outline',
+              destructive: true,
+              loading: remove.isPending,
+              onPress: async () => {
+                const ok = await confirm({
+                  title: `Delete ${obligation.title}?`,
+                  message: obligation.paymentCount
+                    ? `The ${obligation.paymentCount} payment${
+                        obligation.paymentCount === 1 ? '' : 's'
+                      } already recorded stay in your ledger.`
+                    : 'This record will be removed.',
+                });
+                if (!ok) return;
+                try {
+                  await remove.mutateAsync(obligation.id);
+                  toast.success('Record deleted');
+                } catch (e) {
+                  toast.error(e instanceof Error ? e.message : 'Could not delete the record');
+                }
+              },
+            },
+          ]}
+        />
+      ) : null}
+    </Card>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
+    gap: spacing.sm + 2,
+  },
+  body: {
     gap: spacing.sm + 2,
   },
   head: {

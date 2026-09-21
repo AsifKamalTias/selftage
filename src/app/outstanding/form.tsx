@@ -15,6 +15,7 @@ import { Text } from '@/components/ui/text';
 import { TextField } from '@/components/ui/text-field';
 import { useToast } from '@/components/ui/toast';
 import type { Obligation, ObligationDirection } from '@/db/types';
+import { useCatalog } from '@/features/catalog/hooks';
 import { useContacts } from '@/features/contacts/hooks';
 import { useObligation, useSaveObligation } from '@/features/outstanding/hooks';
 import {
@@ -75,6 +76,7 @@ function ObligationForm({
   const [dueDate, setDueDate] = useState<string | null>(
     existing?.dueDate ?? toISODate(addDays(new Date(), 30))
   );
+  const [categoryId, setCategoryId] = useState<string | null>(existing?.categoryId ?? null);
   const [note, setNote] = useState(existing?.note ?? '');
   const [byInstallments, setByInstallments] = useState(false);
   const [count, setCount] = useState(3);
@@ -82,6 +84,7 @@ function ObligationForm({
   const [startDate, setStartDate] = useState<string | null>(toISODate(addDays(new Date(), 30)));
   const [errors, setErrors] = useState<{ contactId?: string; title?: string; amount?: string }>({});
 
+  const categories = useCatalog('categories', dir === 'receivable' ? 'income' : 'expense');
   const amount = parseAmountInput(amountText);
   const preview =
     byInstallments && amount && amount > 0 && startDate
@@ -104,6 +107,7 @@ function ObligationForm({
           direction: dir,
           title: title.trim(),
           amount: amount!,
+          categoryId,
           date: date ?? todayISO(),
           dueDate,
           note: note.trim() || null,
@@ -133,7 +137,10 @@ function ObligationForm({
 
       <SegmentedControl
         value={dir}
-        onChange={setDir}
+        onChange={(next) => {
+          setDir(next);
+          setCategoryId(null);
+        }}
         options={[
           {
             value: 'receivable',
@@ -192,6 +199,20 @@ function ObligationForm({
             ? `${formatAmount(existing.settled)} already settled`
             : undefined
         }
+      />
+
+      <SelectField
+        label={dir === 'receivable' ? 'Income type when received' : 'Expense type when paid'}
+        placeholder="Choose a type (optional)"
+        value={categoryId}
+        options={(categories.data ?? []).map((category) => ({
+          value: category.id,
+          label: category.name,
+          icon: category.icon,
+          color: category.color,
+        }))}
+        onChange={setCategoryId}
+        clearable
       />
 
       <DateField label="Date" value={date} onChange={setDate} shortcuts />

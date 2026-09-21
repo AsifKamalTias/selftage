@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { countOf } from '@/lib/text';
 
 import { DonutChart } from '@/components/charts/donut-chart';
 import { Amount } from '@/components/ui/amount';
@@ -34,7 +35,7 @@ function GroupRow({ row, kind }: { row: GroupTotals; kind: EntryKind }) {
             {row.name}
           </Text>
           <Text variant="micro" color="textMuted" numberOfLines={1}>
-            {row.count} entr{row.count === 1 ? 'y' : 'ies'}
+            {countOf(row.count, 'entry')}
           </Text>
         </View>
         <View style={styles.rowValues}>
@@ -104,7 +105,7 @@ export function GroupBreakdown({
                   label: row.name,
                   value: kind === 'expense' ? row.expense : row.income,
                   color: row.color,
-                  detail: `${row.count} entr${row.count === 1 ? 'y' : 'ies'}`,
+                  detail: countOf(row.count, 'entry'),
                 }))}
               />
             </View>

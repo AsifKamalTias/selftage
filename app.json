@@ -58,6 +58,13 @@
           "photosPermission": "Allow Selftage to attach photos of receipts to your transactions.",
           "cameraPermission": "Allow Selftage to take photos of receipts for your transactions."
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#4F46E5",
+          "defaultChannel": "reminders"
+        }
       ]
     ],
     "experiments": {

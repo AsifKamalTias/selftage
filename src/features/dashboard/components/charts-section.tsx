@@ -10,6 +10,7 @@ import { Section } from '@/components/ui/section';
 import { SegmentedControl } from '@/components/ui/segmented-control';
 import type { EntryKind } from '@/db/types';
 import { useSettings } from '@/features/settings/settings-provider';
+import { countOf } from '@/lib/text';
 import { MONTHS_LONG, parseISODate } from '@/lib/date';
 import { formatMoney } from '@/lib/money';
 import { useTheme } from '@/theme/theme-provider';
@@ -166,7 +167,7 @@ export function BreakdownCard({
                 label: item.name,
                 value: item.total,
                 color: item.color,
-                detail: `${item.count} transaction${item.count === 1 ? '' : 's'}`,
+                detail: countOf(item.count, 'transaction'),
               }))}
             />
           </View>

@@ -23,6 +23,7 @@ import { ObligationCard } from '@/features/outstanding/components/obligation-car
 import { DueList } from '@/features/recurring/components/due-list';
 import { useSettings } from '@/features/settings/settings-provider';
 import { TransactionRow } from '@/features/transactions/components/transaction-row';
+import { countOf } from '@/lib/text';
 import {
   addDays,
   addMonths,
@@ -206,7 +207,7 @@ export default function CalendarScreen() {
             </View>
             <View style={[styles.net, { borderTopColor: colors.border }]}>
               <Text variant="caption" color="textSecondary">
-                Net · {report.count} entr{report.count === 1 ? 'y' : 'ies'}
+                Net · {countOf(report.count, 'entry')}
               </Text>
               <Amount value={report.net} variant="subheading" weight="bold" signed colorize />
             </View>
@@ -315,7 +316,7 @@ export default function CalendarScreen() {
 
           <Section
             title="Entries"
-            caption={report.count ? `${report.count} on this day` : undefined}>
+            caption={report.count ? `${countOf(report.count, 'entry')} on this day` : undefined}>
             {report.transactions.length > 0 ? (
               <Card padded={false} style={styles.list}>
                 {report.transactions.map((item) => (

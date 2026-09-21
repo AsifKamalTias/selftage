@@ -21,6 +21,7 @@ import { PACE_TONE } from '@/features/goals/components/goal-card';
 import { useDeleteGoal, useGoal, useGoalContributions } from '@/features/goals/hooks';
 import { describeDeadline, describePace, goalProgress } from '@/features/goals/progress';
 import { useSettings } from '@/features/settings/settings-provider';
+import { countOf } from '@/lib/text';
 import { toISODate } from '@/lib/date';
 import { goBack } from '@/lib/navigation';
 import { useTheme } from '@/theme/theme-provider';
@@ -209,9 +210,7 @@ export default function GoalDetailScreen() {
         </Section>
       ) : null}
 
-      <Section
-        title="Activity"
-        caption={`${goal.contributionCount} movement${goal.contributionCount === 1 ? '' : 's'}`}>
+      <Section title="Activity" caption={countOf(goal.contributionCount, 'movement')}>
         {contributions.data && contributions.data.length > 0 ? (
           <Card style={styles.activity}>
             {contributions.data.map((item) => (

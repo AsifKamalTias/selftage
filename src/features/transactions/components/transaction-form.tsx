@@ -273,6 +273,15 @@ export function TransactionForm({
       </Card>
 
       <Section title="Details">
+        <TextField
+          label="Title"
+          value={title}
+          onChangeText={setTitle}
+          placeholder={selectedCategory ? selectedCategory.label : 'e.g. Weekly groceries'}
+          hint="Optional — defaults to the type name"
+          maxLength={80}
+          returnKeyType="next"
+        />
         <SelectField
           label={kind === 'income' ? 'Income type' : 'Expense type'}
           placeholder="Choose a type"
@@ -311,15 +320,6 @@ export function TransactionForm({
         />
         <GroupField value={groupId} onChange={setGroupId} />
         <DateField label="Date" value={date} onChange={setDate} shortcuts error={errors.date} />
-        <TextField
-          label="Title"
-          value={title}
-          onChangeText={setTitle}
-          placeholder={selectedCategory ? selectedCategory.label : 'e.g. Weekly groceries'}
-          hint="Optional — defaults to the type name"
-          maxLength={80}
-          returnKeyType="next"
-        />
         <TextField
           label="Note"
           value={note}

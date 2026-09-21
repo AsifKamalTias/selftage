@@ -64,6 +64,7 @@ export function SettleSheet({
         : obligation.remaining;
       setAmountText(minorToInput(suggested));
       setAccountId(settings.defaultAccountId);
+      setCategoryId(obligation.categoryId);
       setDate(todayISO());
       setNote('');
       setError(null);

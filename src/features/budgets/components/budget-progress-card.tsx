@@ -1,12 +1,16 @@
 import { StyleSheet, View } from 'react-native';
 
 import { Card } from '@/components/ui/card';
+import { CardActions } from '@/components/ui/card-actions';
+import { confirm } from '@/components/ui/confirm';
 import { Icon, type IconName } from '@/components/ui/icon';
 import { IconBadge } from '@/components/ui/icon-badge';
 import { PressableScale } from '@/components/ui/pressable-scale';
 import { ProgressBar } from '@/components/ui/progress-bar';
 import { Text } from '@/components/ui/text';
+import { useToast } from '@/components/ui/toast';
 import type { BudgetHealth, BudgetStatus } from '@/db/types';
+import { useDeleteBudget, useToggleBudget } from '@/features/budgets/hooks';
 import { useSettings } from '@/features/settings/settings-provider';
 import { useTheme } from '@/theme/theme-provider';
 import { radius, spacing, type ColorName } from '@/theme/tokens';
@@ -34,23 +38,29 @@ const HEALTH_LABEL: Record<BudgetHealth, string> = {
 export function BudgetProgressCard({
   status,
   onPress,
+  onEdit,
   compact = false,
 }: {
   status: BudgetStatus;
   onPress?: () => void;
+  /** Shows pause, edit and delete actions on the card when provided. */
+  onEdit?: (status: BudgetStatus) => void;
   /** Hides the per-day hint, for dense lists such as the dashboard. */
   compact?: boolean;
 }) {
   const { colors } = useTheme();
   const { formatAmount } = useSettings();
+  const toast = useToast();
+  const toggle = useToggleBudget();
+  const remove = useDeleteBudget();
   const tone = HEALTH_COLOR[status.health];
   const tint = colors[tone];
   const perDay = dailyAllowance(status.remaining, status.daysLeft);
   const percent = Math.round(status.progress * 100);
 
   return (
-    <PressableScale scaleTo={0.99} onPress={onPress} disabled={!onPress}>
-      <Card style={[styles.card, !status.isActive && styles.paused]}>
+    <Card style={[styles.card, !status.isActive && styles.paused]}>
+      <PressableScale scaleTo={0.99} style={styles.body} onPress={onPress} disabled={!onPress}>
         <View style={styles.header}>
           <IconBadge
             icon={status.categoryIcon ?? 'pie-chart'}
@@ -89,23 +99,68 @@ export function BudgetProgressCard({
               : `${formatAmount(Math.abs(status.remaining))} over`}
           </Text>
         </View>
+      </PressableScale>
 
-        {compact ? null : (
-          <Text variant="micro" color="textMuted">
-            {HEALTH_LABEL[status.health]} ·{' '}
-            {status.daysLeft > 0
-              ? `${status.daysLeft} day${status.daysLeft === 1 ? '' : 's'} left`
-              : 'period ends today'}
-            {perDay > 0 ? ` · ${formatAmount(perDay)}/day available` : ''}
-          </Text>
-        )}
-      </Card>
-    </PressableScale>
+      {onEdit ? (
+        <CardActions
+          actions={[
+            {
+              key: 'toggle',
+              label: status.isActive ? 'Pause' : 'Resume',
+              icon: status.isActive ? 'pause-outline' : 'play-outline',
+              loading: toggle.isPending,
+              onPress: async () => {
+                try {
+                  await toggle.mutateAsync({ id: status.id, isActive: !status.isActive });
+                  toast.show(status.isActive ? 'Budget paused' : 'Budget resumed');
+                } catch (e) {
+                  toast.error(e instanceof Error ? e.message : 'Could not update the budget');
+                }
+              },
+            },
+            { key: 'edit', label: 'Edit', icon: 'create-outline', onPress: () => onEdit(status) },
+            {
+              key: 'delete',
+              label: 'Delete',
+              icon: 'trash-outline',
+              destructive: true,
+              loading: remove.isPending,
+              onPress: async () => {
+                const ok = await confirm({
+                  title: `Delete this ${BUDGET_PERIOD_LABELS[status.period].toLowerCase()} budget?`,
+                  message: 'Your transactions are untouched; only the limit is removed.',
+                });
+                if (!ok) return;
+                try {
+                  await remove.mutateAsync(status.id);
+                  toast.success('Budget deleted');
+                } catch (e) {
+                  toast.error(e instanceof Error ? e.message : 'Could not delete the budget');
+                }
+              },
+            },
+          ]}
+        />
+      ) : null}
+
+      {compact ? null : (
+        <Text variant="micro" color="textMuted">
+          {HEALTH_LABEL[status.health]} ·{' '}
+          {status.daysLeft > 0
+            ? `${status.daysLeft} day${status.daysLeft === 1 ? '' : 's'} left`
+            : 'period ends today'}
+          {perDay > 0 ? ` · ${formatAmount(perDay)}/day available` : ''}
+        </Text>
+      )}
+    </Card>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
+    gap: spacing.md,
+  },
+  body: {
     gap: spacing.md,
   },
   paused: {

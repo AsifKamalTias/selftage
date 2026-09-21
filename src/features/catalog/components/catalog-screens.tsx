@@ -20,6 +20,7 @@ import { TextField } from '@/components/ui/text-field';
 import { useToast } from '@/components/ui/toast';
 import type { EntryKind } from '@/db/types';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
+import { countOf } from '@/lib/text';
 import { goBack } from '@/lib/navigation';
 import { useTheme } from '@/theme/theme-provider';
 import { maxContentWidth, spacing } from '@/theme/tokens';
@@ -129,9 +130,7 @@ export function CatalogListScreen({ table }: { table: CatalogTable }) {
                 {item.name}
               </Text>
               <Text variant="caption" color="textMuted">
-                {item.usageCount
-                  ? `${item.usageCount} transaction${item.usageCount === 1 ? '' : 's'}`
-                  : 'Not used yet'}
+                {item.usageCount ? countOf(item.usageCount, 'transaction') : 'Not used yet'}
               </Text>
             </View>
             <Icon name="chevron-forward" size={18} color="textMuted" />

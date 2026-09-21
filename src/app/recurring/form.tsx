@@ -165,7 +165,9 @@ function RecurringForm({ existing }: { existing: RecurringRule | null }) {
     const ok = await confirm({
       title: `Delete ${existing.name}?`,
       message: existing.postedCount
-        ? `The ${existing.postedCount} transaction(s) already posted stay in your history; only the schedule is removed.`
+        ? `The ${existing.postedCount} transaction${
+            existing.postedCount === 1 ? '' : 's'
+          } already posted stay${existing.postedCount === 1 ? 's' : ''} in your history; only the schedule is removed.`
         : 'The schedule will be removed. Nothing else changes.',
     });
     if (!ok) return;

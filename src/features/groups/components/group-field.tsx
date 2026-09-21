@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
+import { countOf } from '@/lib/text';
 
 import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { Button } from '@/components/ui/button';
@@ -38,7 +39,7 @@ export function GroupField({
     value: group.id,
     label: group.name,
     description: group.transactionCount
-      ? `${group.transactionCount} entr${group.transactionCount === 1 ? 'y' : 'ies'}`
+      ? countOf(group.transactionCount, 'entry')
       : 'No entries yet',
     icon: group.icon,
     color: group.color,

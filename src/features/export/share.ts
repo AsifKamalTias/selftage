@@ -19,11 +19,23 @@ export async function shareTextFile(fileName: string, content: string, mimeType:
   await share(file.uri, mimeType, fileName);
 }
 
-/** Renders HTML to a PDF and opens the share sheet. */
+/**
+ * Renders HTML to a PDF and opens the share sheet. The printed file is given a
+ * readable name when possible, but a failure to rename never costs the export —
+ * the original file is shared instead.
+ */
 export async function sharePdf(fileName: string, html: string) {
   const { uri } = await Print.printToFileAsync({ html });
-  const target = new File(Paths.cache, fileName);
-  if (target.exists) target.delete();
-  await new File(uri).move(target);
-  await share(target.uri, 'application/pdf', fileName);
+
+  let shareUri = uri;
+  try {
+    const target = new File(Paths.cache, fileName);
+    if (target.exists) target.delete();
+    new File(uri).copy(target);
+    shareUri = target.uri;
+  } catch (error) {
+    console.warn('Could not rename the printed report', error);
+  }
+
+  await share(shareUri, 'application/pdf', fileName);
 }

@@ -1,5 +1,6 @@
 import { router, Stack } from 'expo-router';
 import { StyleSheet } from 'react-native';
+import { countOf } from '@/lib/text';
 
 import { Button, IconButton } from '@/components/ui/button';
 import { ListGroup, ListRow } from '@/components/ui/list-row';
@@ -40,9 +41,7 @@ export default function AccountTypesScreen() {
               iconColor={type.color}
               title={type.name}
               subtitle={
-                type.accountCount
-                  ? `${type.accountCount} account${type.accountCount === 1 ? '' : 's'}`
-                  : 'No accounts yet'
+                type.accountCount ? countOf(type.accountCount, 'account') : 'No accounts yet'
               }
               onPress={() =>
                 router.push({ pathname: '/manage/account-types/form', params: { id: type.id } })

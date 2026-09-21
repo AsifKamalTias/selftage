@@ -81,7 +81,12 @@ export default function RecurringScreen() {
             <Section title="Active" caption={activeCaption}>
               <View style={styles.list}>
                 {active.map((rule) => (
-                  <RecurringRow key={rule.id} rule={rule} onPress={() => openForm(rule.id)} />
+                  <RecurringRow
+                    key={rule.id}
+                    rule={rule}
+                    onPress={() => openForm(rule.id)}
+                    showActions
+                  />
                 ))}
               </View>
             </Section>
@@ -91,7 +96,12 @@ export default function RecurringScreen() {
             <Section title="Paused" caption="Nothing is posted until you resume them">
               <View style={styles.list}>
                 {paused.map((rule) => (
-                  <RecurringRow key={rule.id} rule={rule} onPress={() => openForm(rule.id)} />
+                  <RecurringRow
+                    key={rule.id}
+                    rule={rule}
+                    onPress={() => openForm(rule.id)}
+                    showActions
+                  />
                 ))}
               </View>
             </Section>

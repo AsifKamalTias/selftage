@@ -15,6 +15,7 @@ import { BudgetProgressCard } from '@/features/budgets/components/budget-progres
 import { useBudgetStatuses } from '@/features/budgets/hooks';
 import { BUDGET_PERIOD_LABELS } from '@/features/budgets/period';
 import { useSettings } from '@/features/settings/settings-provider';
+import { countOf, verbFor } from '@/lib/text';
 import { formatDate } from '@/lib/date';
 import { useTheme } from '@/theme/theme-provider';
 import { spacing } from '@/theme/tokens';
@@ -36,6 +37,9 @@ function PeriodGroup({ period, statuses }: { period: BudgetPeriod; statuses: Bud
             key={status.id}
             status={status}
             onPress={() => router.push({ pathname: '/budgets/form', params: { id: status.id } })}
+            onEdit={(budget) =>
+              router.push({ pathname: '/budgets/form', params: { id: budget.id } })
+            }
           />
         ))}
       </View>
@@ -97,8 +101,8 @@ export default function BudgetsScreen() {
             />
             <Text variant="callout" style={styles.summaryText}>
               {attention.length
-                ? `${attention.length} budget${attention.length === 1 ? ' needs' : 's need'} attention this period.`
-                : `All ${active.length} active budget${active.length === 1 ? '' : 's'} are on track.`}
+                ? `${countOf(attention.length, 'budget')} ${verbFor(attention.length, 'needs', 'need')} attention this period.`
+                : `All ${countOf(active.length, 'active budget')} ${verbFor(active.length, 'is', 'are')} on track.`}
             </Text>
           </Card>
 

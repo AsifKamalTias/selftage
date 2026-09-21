@@ -290,6 +290,11 @@ CREATE UNIQUE INDEX idx_transactions_installment ON transactions (installment_id
   WHERE installment_id IS NOT NULL;
 `;
 
+const SCHEMA_V8 = `
+-- The type a record settles under, so recording a payment does not ask twice.
+ALTER TABLE obligations ADD COLUMN category_id TEXT REFERENCES categories (id) ON DELETE SET NULL;
+`;
+
 /**
  * Append-only list. Never edit a shipped migration; add a new version instead.
  * Each migration runs in its own transaction together with the version bump.
@@ -336,6 +341,12 @@ const MIGRATIONS: readonly Migration[] = [
     version: 7,
     up: async (tx) => {
       await tx.execAsync(SCHEMA_V7);
+    },
+  },
+  {
+    version: 8,
+    up: async (tx) => {
+      await tx.execAsync(SCHEMA_V8);
     },
   },
 ];

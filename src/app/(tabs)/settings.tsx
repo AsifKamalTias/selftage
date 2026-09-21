@@ -1,7 +1,7 @@
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { FlatList, StyleSheet, View } from 'react-native';
+import { FlatList, Platform, StyleSheet, View } from 'react-native';
 
 import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { Card } from '@/components/ui/card';
@@ -19,9 +19,12 @@ import { Text } from '@/components/ui/text';
 import { TextField } from '@/components/ui/text-field';
 import { useToast } from '@/components/ui/toast';
 import { useAccounts } from '@/features/accounts/hooks';
+import { formatReminderTime } from '@/features/notifications/reminders';
+import { requestReminderPermission } from '@/features/notifications/scheduler';
 import { useExportTransactions, useResetAllData } from '@/features/settings/hooks';
 import { useSettings } from '@/features/settings/settings-provider';
 import type { ThemeMode } from '@/features/settings/settings';
+import { countOf } from '@/lib/text';
 import {
   DATE_FORMATS,
   formatDate,
@@ -123,15 +126,91 @@ function WeekStartSheet({
   );
 }
 
+const REMINDER_TIMES = [
+  '06:00',
+  '07:00',
+  '08:00',
+  '09:00',
+  '10:00',
+  '12:00',
+  '15:00',
+  '18:00',
+  '20:00',
+  '21:00',
+  '22:00',
+];
+
+function ReminderTimeSheet({
+  visible,
+  value,
+  onClose,
+  onChange,
+}: {
+  visible: boolean;
+  value: string;
+  onClose: () => void;
+  onChange: (time: string) => void;
+}) {
+  const { colors } = useTheme();
+  return (
+    <BottomSheet visible={visible} onClose={onClose} title="Remind me at">
+      <FlatList
+        data={REMINDER_TIMES}
+        keyExtractor={(time) => time}
+        contentContainerStyle={styles.sheetList}
+        renderItem={({ item }) => {
+          const selected = item === value;
+          return (
+            <PressableScale
+              haptic
+              accessibilityRole="radio"
+              accessibilityLabel={formatReminderTime(item)}
+              accessibilityState={{ selected }}
+              onPress={() => {
+                onChange(item);
+                onClose();
+              }}
+              style={[styles.option, selected && { backgroundColor: colors.primaryMuted }]}>
+              <Text weight={selected ? 'semibold' : 'medium'} style={styles.flex}>
+                {formatReminderTime(item)}
+              </Text>
+              {selected ? <Icon name="checkmark-circle" size={22} color="primary" /> : null}
+            </PressableScale>
+          );
+        }}
+      />
+    </BottomSheet>
+  );
+}
+
 export default function SettingsScreen() {
   const { settings, currency, updateSettings, formatAmount } = useSettings();
   const toast = useToast();
   const [name, setName] = useState(settings.displayName);
   const [dateSheet, setDateSheet] = useState(false);
+  const [timeSheet, setTimeSheet] = useState(false);
   const [weekSheet, setWeekSheet] = useState(false);
   const accounts = useAccounts({ includeArchived: false });
   const exportTransactions = useExportTransactions();
   const reset = useResetAllData();
+
+  // A browser tab cannot wake itself to fire a reminder.
+  const remindersSupported = Platform.OS !== 'web';
+
+  const toggleReminders = async () => {
+    if (settings.notificationsEnabled) {
+      await save({ notificationsEnabled: false });
+      toast.show('Reminders turned off');
+      return;
+    }
+    const granted = await requestReminderPermission();
+    if (!granted) {
+      toast.error('Allow notifications for this app in your device settings first.');
+      return;
+    }
+    await save({ notificationsEnabled: true });
+    toast.success(`Reminders on · ${formatReminderTime(settings.notificationTime)}`);
+  };
 
   const save = async (patch: Parameters<typeof updateSettings>[0]) => {
     try {
@@ -144,7 +223,7 @@ export default function SettingsScreen() {
   const handleExport = async () => {
     try {
       const count = await exportTransactions.mutateAsync();
-      toast.success(`Exported ${count} transaction${count === 1 ? '' : 's'}`);
+      toast.success(`Exported ${countOf(count, 'transaction')}`);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Export failed');
     }
@@ -187,7 +266,7 @@ export default function SettingsScreen() {
         />
       </Card>
 
-      <Section title="Preferences">
+      <Section title="Preferences" caption="How money and dates are shown">
         <ListGroup>
           <ListRow
             icon="cash-outline"
@@ -211,10 +290,10 @@ export default function SettingsScreen() {
             onPress={() => setWeekSheet(true)}
           />
         </ListGroup>
-        <Card style={styles.group}>
-          <Text variant="label" color="textSecondary">
-            Appearance
-          </Text>
+      </Section>
+
+      <Section title="Appearance" caption="Light, dark or whatever the system uses">
+        <Card>
           <SegmentedControl<ThemeMode>
             value={settings.themeMode}
             onChange={(themeMode) => save({ themeMode })}
@@ -224,8 +303,13 @@ export default function SettingsScreen() {
               { value: 'dark', label: 'Dark', icon: 'moon-outline' },
             ]}
           />
+        </Card>
+      </Section>
+
+      <Section title="New transactions" caption="What a new entry starts with">
+        <Card>
           <SelectField
-            label="Default account for new transactions"
+            label="Default account"
             value={settings.defaultAccountId}
             onChange={(defaultAccountId) => {
               if (defaultAccountId) save({ defaultAccountId });
@@ -241,14 +325,82 @@ export default function SettingsScreen() {
         </Card>
       </Section>
 
-      <Section title="Reports & data">
+      <Section
+        title="Notifications"
+        caption={
+          remindersSupported
+            ? 'Reminders for what is due, on this device only'
+            : 'Reminders need the iOS or Android app'
+        }>
+        <ListGroup>
+          <ListRow
+            icon="notifications-outline"
+            title="Reminders"
+            subtitle={
+              remindersSupported
+                ? settings.notificationsEnabled
+                  ? 'On'
+                  : 'Off'
+                : 'Not available in the browser'
+            }
+            value={remindersSupported ? (settings.notificationsEnabled ? 'On' : 'Off') : '—'}
+            disabled={!remindersSupported}
+            onPress={remindersSupported ? toggleReminders : undefined}
+          />
+          <ListRow
+            icon="alarm-outline"
+            title="Remind me at"
+            subtitle="Everything due that day is announced at this time"
+            value={formatReminderTime(settings.notificationTime)}
+            disabled={!settings.notificationsEnabled}
+            onPress={settings.notificationsEnabled ? () => setTimeSheet(true) : undefined}
+          />
+          <ListRow
+            icon="repeat"
+            title="Recurring entries"
+            subtitle="When a manual entry is waiting to be marked paid"
+            value={settings.notifyRecurring ? 'On' : 'Off'}
+            disabled={!settings.notificationsEnabled}
+            onPress={
+              settings.notificationsEnabled
+                ? () => save({ notifyRecurring: !settings.notifyRecurring })
+                : undefined
+            }
+          />
+          <ListRow
+            icon="reader-outline"
+            title="Outstanding payments"
+            subtitle="When a payable or receivable reaches its due date"
+            value={settings.notifyOutstanding ? 'On' : 'Off'}
+            disabled={!settings.notificationsEnabled}
+            onPress={
+              settings.notificationsEnabled
+                ? () => save({ notifyOutstanding: !settings.notifyOutstanding })
+                : undefined
+            }
+          />
+        </ListGroup>
+      </Section>
+
+      <Section title="Reports" caption="Statements you can share or print">
         <ListGroup>
           <ListRow
             icon="document-text-outline"
             title="Ledger report"
-            subtitle="Statements with opening & closing balances, PDF/CSV"
+            subtitle="Statements with opening and closing balances, PDF or CSV"
             onPress={() => router.push('/reports/ledger')}
           />
+          <ListRow
+            icon="pie-chart-outline"
+            title="Group report"
+            subtitle="What each trip, project or event adds up to"
+            onPress={() => router.push('/reports/groups')}
+          />
+        </ListGroup>
+      </Section>
+
+      <Section title="Data" caption="Everything stays on this device">
+        <ListGroup>
           <ListRow
             icon="download-outline"
             title="Export transactions"
@@ -286,6 +438,12 @@ export default function SettingsScreen() {
         value={settings.weekStartsOn}
         onClose={() => setWeekSheet(false)}
         onChange={(weekStartsOn) => save({ weekStartsOn })}
+      />
+      <ReminderTimeSheet
+        visible={timeSheet}
+        value={settings.notificationTime}
+        onClose={() => setTimeSheet(false)}
+        onChange={(notificationTime) => save({ notificationTime })}
       />
     </Screen>
   );

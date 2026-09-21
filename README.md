@@ -16,7 +16,8 @@ A personal income and expense tracker that keeps everything on your device. Buil
 - **Goals** — set a target amount, date and note, then hold money from an account towards it. Held money stays in the account but stops counting as available, so you can see progress as a ring, a percentage and what to set aside per day, week or month. Release it back whenever you like, or mark the goal complete once it is fully funded to spend the reserve as a recorded expense.
 - **Dashboard** — balance, income and expense totals with period comparison, cash-flow and running-total charts, breakdown by type and source, account summaries and recent activity.
 - **History** — search and filter by kind, date range, account, type, source, amount and attachments.
-- **Settings** — currency, date format, first day of the week, appearance (light/dark/system), default account, CSV export and a full data reset.
+- **Reminders** — optional local notifications at a time you choose, for recurring entries waiting to be marked paid and for payables and receivables reaching their due date (iOS and Android).
+- **Settings** — currency, date format and first day of the week; appearance; the default account for new entries; reminders; reports; and data (CSV export or a full reset).
 
 ## Getting started
 

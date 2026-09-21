@@ -16,6 +16,7 @@ import { useToast } from '@/components/ui/toast';
 import { AttachmentGallery } from '@/features/attachments/components/attachment-gallery';
 import { useSettings } from '@/features/settings/settings-provider';
 import { useDeleteTransaction, useTransaction } from '@/features/transactions/hooks';
+import { countOf } from '@/lib/text';
 import { goBack } from '@/lib/navigation';
 import { useTheme } from '@/theme/theme-provider';
 import { radius, spacing } from '@/theme/tokens';
@@ -189,7 +190,7 @@ export default function TransactionDetailScreen() {
       ) : null}
 
       {data.attachments.length > 0 ? (
-        <Section title="Attachments" caption={`${data.attachments.length} file(s)`}>
+        <Section title="Attachments" caption={countOf(data.attachments.length, 'file')}>
           <AttachmentGallery items={data.attachments.map((a) => ({ key: a.id, ...a }))} />
         </Section>
       ) : null}

@@ -66,10 +66,20 @@ export async function saveSettings(db: SQLiteDatabase, patch: Partial<AppSetting
 /** Removes every user record and restores the initial seed data. */
 export async function resetAllData(db: SQLiteDatabase): Promise<void> {
   await runInTransaction(db, async (tx) => {
+    // Children first: the schema restricts deleting anything still referenced.
     await tx.execAsync(`
       DELETE FROM attachments;
       DELETE FROM ledger_entries;
       DELETE FROM transactions;
+      DELETE FROM obligation_installments;
+      DELETE FROM obligations;
+      DELETE FROM contacts;
+      DELETE FROM goal_contributions;
+      DELETE FROM goals;
+      DELETE FROM recurring_occurrences;
+      DELETE FROM recurring_rules;
+      DELETE FROM budgets;
+      DELETE FROM groups;
       DELETE FROM accounts;
       DELETE FROM account_types;
       DELETE FROM sources;

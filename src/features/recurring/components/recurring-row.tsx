@@ -2,31 +2,49 @@ import { StyleSheet, View } from 'react-native';
 
 import { Amount } from '@/components/ui/amount';
 import { Card } from '@/components/ui/card';
+import { CardActions } from '@/components/ui/card-actions';
+import { confirm } from '@/components/ui/confirm';
 import { Icon } from '@/components/ui/icon';
 import { IconBadge } from '@/components/ui/icon-badge';
 import { PressableScale } from '@/components/ui/pressable-scale';
 import { Text } from '@/components/ui/text';
+import { useToast } from '@/components/ui/toast';
 import type { RecurringRule } from '@/db/types';
+import { useDeleteRecurringRule, useToggleRecurringRule } from '@/features/recurring/hooks';
 import { useSettings } from '@/features/settings/settings-provider';
+import { countOf } from '@/lib/text';
 import { todayISO } from '@/lib/date';
 import { useTheme } from '@/theme/theme-provider';
 import { radius, spacing } from '@/theme/tokens';
 
 import { describeNextRun, describeRecurrence } from '../schedule';
 
-export function RecurringRow({ rule, onPress }: { rule: RecurringRule; onPress: () => void }) {
+export function RecurringRow({
+  rule,
+  onPress,
+  showActions = false,
+}: {
+  rule: RecurringRule;
+  onPress: () => void;
+  /** Shows pause, edit and delete along the bottom of the card. */
+  showActions?: boolean;
+}) {
   const { colors } = useTheme();
   const { settings } = useSettings();
+  const toast = useToast();
+  const toggle = useToggleRecurringRule();
+  const remove = useDeleteRecurringRule();
   const today = todayISO();
   const overdue = rule.isActive && rule.nextDate <= today;
 
   return (
-    <PressableScale
-      scaleTo={0.99}
-      onPress={onPress}
-      accessibilityLabel={`Edit ${rule.name}`}
-      accessibilityHint={describeRecurrence(rule.frequency, rule.intervalCount, rule.startDate)}>
-      <Card style={[styles.card, !rule.isActive && styles.paused]}>
+    <Card style={[styles.card, !rule.isActive && styles.paused]}>
+      <PressableScale
+        scaleTo={0.99}
+        style={styles.body}
+        onPress={onPress}
+        accessibilityLabel={`Edit ${rule.name}`}
+        accessibilityHint={describeRecurrence(rule.frequency, rule.intervalCount, rule.startDate)}>
         <View style={styles.header}>
           <IconBadge icon={rule.categoryIcon} color={rule.categoryColor} size={40} />
           <View style={styles.titles}>
@@ -79,16 +97,65 @@ export function RecurringRow({ rule, onPress }: { rule: RecurringRule; onPress: 
           </Text>
         ) : rule.postedCount ? (
           <Text variant="micro" color="textMuted">
-            {rule.postedCount} entr{rule.postedCount === 1 ? 'y' : 'ies'} posted so far
+            {countOf(rule.postedCount, 'entry')} posted so far
           </Text>
         ) : null}
-      </Card>
-    </PressableScale>
+      </PressableScale>
+
+      {showActions ? (
+        <CardActions
+          actions={[
+            {
+              key: 'toggle',
+              label: rule.isActive ? 'Pause' : 'Resume',
+              icon: rule.isActive ? 'pause-outline' : 'play-outline',
+              loading: toggle.isPending,
+              onPress: async () => {
+                try {
+                  await toggle.mutateAsync({ id: rule.id, isActive: !rule.isActive });
+                  toast.show(rule.isActive ? 'Recurring paused' : 'Recurring resumed');
+                } catch (e) {
+                  toast.error(e instanceof Error ? e.message : 'Could not update this recurring');
+                }
+              },
+            },
+            { key: 'edit', label: 'Edit', icon: 'create-outline', onPress },
+            {
+              key: 'delete',
+              label: 'Delete',
+              icon: 'trash-outline',
+              destructive: true,
+              loading: remove.isPending,
+              onPress: async () => {
+                const ok = await confirm({
+                  title: `Delete ${rule.name}?`,
+                  message: rule.postedCount
+                    ? `The ${rule.postedCount} transaction${
+                        rule.postedCount === 1 ? '' : 's'
+                      } already posted stay in your history; only the schedule is removed.`
+                    : 'The schedule will be removed. Nothing else changes.',
+                });
+                if (!ok) return;
+                try {
+                  await remove.mutateAsync(rule.id);
+                  toast.success('Recurring deleted');
+                } catch (e) {
+                  toast.error(e instanceof Error ? e.message : 'Could not delete this recurring');
+                }
+              },
+            },
+          ]}
+        />
+      ) : null}
+    </Card>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
+    gap: spacing.md,
+  },
+  body: {
     gap: spacing.md,
   },
   paused: {

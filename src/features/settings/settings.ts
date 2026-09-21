@@ -21,7 +21,22 @@ export interface AppSettings {
   displayName: string;
   /** First day of the week (0 = Sunday), used by weekly budgets and "this week". */
   weekStartsOn: WeekStart;
+  /** Master switch for every reminder. */
+  notificationsEnabled: boolean;
+  /** Reminders for recurring entries waiting to be marked paid. */
+  notifyRecurring: boolean;
+  /** Reminders for payables and receivables reaching their due date. */
+  notifyOutstanding: boolean;
+  /** Time of day reminders fire, as 24-hour "HH:MM". */
+  notificationTime: string;
 }
+
+/** Matches a 24-hour "HH:MM". */
+export function isReminderTime(value: unknown): value is string {
+  return typeof value === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
+}
+
+export const DEFAULT_NOTIFICATION_TIME = '09:00';
 
 export type SettingKey = keyof AppSettings;
 
@@ -46,6 +61,10 @@ export function defaultSettings(): AppSettings {
     defaultAccountId: null,
     displayName: '',
     weekStartsOn: deviceWeekStart(),
+    notificationsEnabled: false,
+    notifyRecurring: true,
+    notifyOutstanding: true,
+    notificationTime: DEFAULT_NOTIFICATION_TIME,
   };
 }
 
@@ -71,5 +90,11 @@ export function sanitizeSettings(raw: Partial<Record<SettingKey, unknown>>): App
     weekStartsOn: WEEK_STARTS.includes(raw.weekStartsOn as WeekStart)
       ? (raw.weekStartsOn as WeekStart)
       : defaults.weekStartsOn,
+    notificationsEnabled: raw.notificationsEnabled === true,
+    notifyRecurring: raw.notifyRecurring !== false,
+    notifyOutstanding: raw.notifyOutstanding !== false,
+    notificationTime: isReminderTime(raw.notificationTime)
+      ? raw.notificationTime
+      : defaults.notificationTime,
   };
 }

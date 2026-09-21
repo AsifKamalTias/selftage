@@ -1,4 +1,5 @@
 import { router, Stack } from 'expo-router';
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Amount } from '@/components/ui/amount';
@@ -9,13 +10,34 @@ import { ListSkeleton } from '@/components/ui/loader';
 import { Screen } from '@/components/ui/screen';
 import { Section } from '@/components/ui/section';
 import { Text } from '@/components/ui/text';
+import type { Goal } from '@/db/types';
 import { GoalCard } from '@/features/goals/components/goal-card';
-import { useGoals } from '@/features/goals/hooks';
+import { GoalMoneySheet, type MoneyMode } from '@/features/goals/components/goal-money-sheet';
+import { useGoalContributions, useGoals } from '@/features/goals/hooks';
 import { useTheme } from '@/theme/theme-provider';
 import { spacing } from '@/theme/tokens';
 
+/** Loads the per-account holds the money sheet needs, only once one is opened. */
+function GoalMoneyLauncher({
+  goal,
+  mode,
+  onClose,
+}: {
+  goal: Goal;
+  mode: MoneyMode;
+  onClose: () => void;
+}) {
+  const contributions = useGoalContributions(goal.id);
+  const held = new Map<string, number>();
+  for (const item of contributions.data ?? []) {
+    held.set(item.accountId, (held.get(item.accountId) ?? 0) + item.amount);
+  }
+  return <GoalMoneySheet goal={goal} mode={mode} visible onClose={onClose} heldByAccount={held} />;
+}
+
 export default function GoalsScreen() {
   const { colors } = useTheme();
+  const [money, setMoney] = useState<{ goal: Goal; mode: MoneyMode } | null>(null);
   const { data, isPending } = useGoals();
   const goals = data ?? [];
   const active = goals.filter((goal) => goal.status === 'active');
@@ -76,7 +98,16 @@ export default function GoalsScreen() {
             <Section title="In progress" caption="Money held for these stays in your accounts">
               <View style={styles.list}>
                 {active.map((goal) => (
-                  <GoalCard key={goal.id} goal={goal} onPress={() => open(goal.id)} />
+                  <GoalCard
+                    key={goal.id}
+                    goal={goal}
+                    onPress={() => open(goal.id)}
+                    onHold={(target) => setMoney({ goal: target, mode: 'reserve' })}
+                    onRelease={(target) => setMoney({ goal: target, mode: 'release' })}
+                    onEdit={(target) =>
+                      router.push({ pathname: '/goals/form', params: { id: target.id } })
+                    }
+                  />
                 ))}
               </View>
             </Section>
@@ -95,6 +126,10 @@ export default function GoalsScreen() {
           <Button title="Create a goal" icon="add" variant="secondary" onPress={() => open()} />
         </>
       )}
+
+      {money ? (
+        <GoalMoneyLauncher goal={money.goal} mode={money.mode} onClose={() => setMoney(null)} />
+      ) : null}
     </Screen>
   );
 }

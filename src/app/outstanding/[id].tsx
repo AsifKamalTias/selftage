@@ -24,6 +24,7 @@ import { useDeleteObligation, useInstallments, useObligation } from '@/features/
 import { useSettings } from '@/features/settings/settings-provider';
 import { TransactionRow } from '@/features/transactions/components/transaction-row';
 import { useTransactionList } from '@/features/transactions/hooks';
+import { countOf, verbFor } from '@/lib/text';
 import { todayISO } from '@/lib/date';
 import { goBack } from '@/lib/navigation';
 import { useTheme } from '@/theme/theme-provider';
@@ -113,9 +114,11 @@ export default function ObligationDetailScreen() {
     const ok = await confirm({
       title: `Delete ${obligation.title}?`,
       message: obligation.paymentCount
-        ? `The ${obligation.paymentCount} payment${
-            obligation.paymentCount === 1 ? '' : 's'
-          } already recorded stay in your ledger; only this record is removed.`
+        ? `The ${countOf(obligation.paymentCount, 'payment')} already recorded ${verbFor(
+            obligation.paymentCount,
+            'stays',
+            'stay'
+          )} in your ledger; only this record is removed.`
         : 'This record will be removed.',
     });
     if (!ok) return;
@@ -240,7 +243,9 @@ export default function ObligationDetailScreen() {
       <Section
         title="Payments"
         caption={
-          obligation.paymentCount ? `${obligation.paymentCount} recorded in your ledger` : undefined
+          obligation.paymentCount
+            ? `${countOf(obligation.paymentCount, 'payment')} in your ledger`
+            : undefined
         }>
         {entries.length > 0 ? (
           <Card padded={false} style={styles.payments}>

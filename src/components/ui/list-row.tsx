@@ -19,6 +19,8 @@ export interface ListRowProps {
   onPress?: () => void;
   chevron?: boolean;
   destructive?: boolean;
+  /** Dims the row and ignores presses, e.g. a setting a switch above turned off. */
+  disabled?: boolean;
   accessibilityHint?: string;
 }
 
@@ -31,6 +33,7 @@ export function ListRow({
   onPress,
   chevron = !!onPress,
   destructive = false,
+  disabled = false,
   accessibilityHint,
 }: ListRowProps) {
   const { colors } = useTheme();
@@ -38,12 +41,13 @@ export function ListRow({
   return (
     <PressableScale
       onPress={onPress}
-      disabled={!onPress}
+      disabled={disabled || !onPress}
       scaleTo={0.985}
       accessibilityRole={onPress ? 'button' : undefined}
       accessibilityLabel={subtitle ? `${title}, ${subtitle}` : title}
       accessibilityHint={accessibilityHint}
-      style={styles.row}>
+      accessibilityState={{ disabled }}
+      style={[styles.row, disabled && styles.disabled]}>
       {icon ? <IconBadge icon={icon} color={tint} size={36} /> : null}
       <View style={styles.text}>
         <Text weight="medium" color={destructive ? 'danger' : 'text'} numberOfLines={1}>
@@ -86,6 +90,9 @@ export function ListGroup({ children }: { children: ReactNode }) {
 }
 
 const styles = StyleSheet.create({
+  disabled: {
+    opacity: 0.45,
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',

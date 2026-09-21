@@ -1,12 +1,16 @@
 import { StyleSheet, View } from 'react-native';
 
 import { Card } from '@/components/ui/card';
+import { CardActions } from '@/components/ui/card-actions';
+import { confirm } from '@/components/ui/confirm';
 import { Icon, type IconName } from '@/components/ui/icon';
 import { IconBadge } from '@/components/ui/icon-badge';
 import { PressableScale } from '@/components/ui/pressable-scale';
 import { ProgressBar } from '@/components/ui/progress-bar';
 import { Text } from '@/components/ui/text';
 import type { Goal } from '@/db/types';
+import { useToast } from '@/components/ui/toast';
+import { useDeleteGoal } from '@/features/goals/hooks';
 import { useSettings } from '@/features/settings/settings-provider';
 import { useTheme } from '@/theme/theme-provider';
 import { radius, spacing, type ColorName } from '@/theme/tokens';
@@ -31,19 +35,35 @@ const PACE_ICON: Record<GoalPace, IconName> = {
   overdue: 'alert-circle',
 };
 
-export function GoalCard({ goal, onPress }: { goal: Goal; onPress: () => void }) {
+export function GoalCard({
+  goal,
+  onPress,
+  onHold,
+  onRelease,
+  onEdit,
+}: {
+  goal: Goal;
+  onPress: () => void;
+  /** Shows the hold, release, edit and delete actions when provided. */
+  onHold?: (goal: Goal) => void;
+  onRelease?: (goal: Goal) => void;
+  onEdit?: (goal: Goal) => void;
+}) {
   const { colors } = useTheme();
   const { formatAmount } = useSettings();
+  const toast = useToast();
+  const remove = useDeleteGoal();
   const progress = goalProgress(goal);
   const completed = goal.status === 'completed';
   const tone: ColorName = completed ? 'income' : PACE_TONE[progress.pace];
 
   return (
-    <PressableScale
-      scaleTo={0.99}
-      onPress={onPress}
-      accessibilityLabel={`${goal.name}, ${progress.percent}% saved`}>
-      <Card style={[styles.card, completed && styles.completed]}>
+    <Card style={[styles.card, completed && styles.completed]}>
+      <PressableScale
+        scaleTo={0.99}
+        style={styles.body}
+        onPress={onPress}
+        accessibilityLabel={`${goal.name}, ${progress.percent}% saved`}>
         <View style={styles.header}>
           <IconBadge icon={goal.icon} color={goal.color} size={40} />
           <View style={styles.titles}>
@@ -85,13 +105,59 @@ export function GoalCard({ goal, onPress }: { goal: Goal; onPress: () => void })
             </Text>
           )}
         </View>
-      </Card>
-    </PressableScale>
+      </PressableScale>
+
+      {onHold && !completed ? (
+        <CardActions
+          actions={[
+            {
+              key: 'hold',
+              label: 'Hold',
+              icon: 'lock-closed-outline',
+              onPress: () => onHold(goal),
+            },
+            {
+              key: 'release',
+              label: 'Release',
+              icon: 'lock-open-outline',
+              disabled: goal.saved <= 0,
+              onPress: () => onRelease?.(goal),
+            },
+            { key: 'edit', label: 'Edit', icon: 'create-outline', onPress: () => onEdit?.(goal) },
+            {
+              key: 'delete',
+              label: 'Delete',
+              icon: 'trash-outline',
+              destructive: true,
+              loading: remove.isPending,
+              onPress: async () => {
+                const ok = await confirm({
+                  title: `Delete ${goal.name}?`,
+                  message: goal.saved
+                    ? `${formatAmount(goal.saved)} held for this goal is released back to your accounts.`
+                    : 'This goal will be removed.',
+                });
+                if (!ok) return;
+                try {
+                  await remove.mutateAsync(goal.id);
+                  toast.success('Goal deleted');
+                } catch (e) {
+                  toast.error(e instanceof Error ? e.message : 'Could not delete the goal');
+                }
+              },
+            },
+          ]}
+        />
+      ) : null}
+    </Card>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
+    gap: spacing.md,
+  },
+  body: {
     gap: spacing.md,
   },
   completed: {
