@@ -39,9 +39,11 @@ eas build --profile development --platform android
 `eas.json` holds three profiles: `development` (dev client, internal APK), `preview`
 (internal APK for testers) and `production` (app bundle, remote version numbers).
 
-The app publishes as `@varvine/selftage` with the identifier `com.varvine.selftage` on
-both platforms. Changing either is free until the first store submission and permanent
-after it. `/android` and `/ios` are generated, so after touching `android.package` or
+The app ships as `com.varvine.selftage` on both platforms. The EAS project still belongs
+to the personal account, so `app.json` has no `owner` — set `"owner": "varvine"` only
+once that account or organisation exists and the project has been transferred to it, or
+the build stops on an owner mismatch. Changing either identifier is free until the first
+store submission and permanent after it. `/android` and `/ios` are generated, so after touching `android.package` or
 `ios.bundleIdentifier` run `npx expo prebuild --clean` — an existing folder keeps the old
 identifier.
 
