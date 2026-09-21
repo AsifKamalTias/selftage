@@ -2,7 +2,11 @@ import { router, type Href } from 'expo-router';
 import { createContext, use, useCallback, useState, type ReactNode } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import Animated, { SlideInLeft } from 'react-native-reanimated';
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  initialWindowMetrics,
+  SafeAreaProvider,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
 
 import { LogoMark } from '@/components/brand/logo-mark';
 import { IconButton } from '@/components/ui/button';
@@ -108,7 +112,9 @@ function MenuPanel({
           backgroundColor: colors.background,
           width,
           paddingTop: insets.top + spacing.lg,
-          paddingBottom: insets.bottom + spacing.lg,
+          // Clearing the gesture bar is enough; a margin on top of the inset leaves a
+          // strip of panel background that reads as a gap under the menu.
+          paddingBottom: Math.max(insets.bottom, spacing.lg),
         },
         elevation(3, colors.shadow, isDark),
       ]}>
@@ -282,7 +288,9 @@ function AppMenu({ visible, onClose }: { visible: boolean; onClose: () => void }
           importantForAccessibility="no"
         />
         {visible ? (
-          <SafeAreaProvider style={styles.providerFill}>
+          // initialMetrics: a bare provider renders nothing on its first frame while it
+          // measures, which would make the panel flash empty as it slides in.
+          <SafeAreaProvider initialMetrics={initialWindowMetrics} style={styles.providerFill}>
             <MenuPanel width={Math.min(320, width * 0.86)} isDark={isDark}>
               <View style={styles.header}>
                 <View style={[styles.logo, { backgroundColor: brandGradient[0] }]}>

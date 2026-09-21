@@ -71,7 +71,9 @@ export function BottomSheet({
                   backgroundColor: colors.surface,
                   maxHeight: height * maxHeight,
                   height: fill ? height * maxHeight : undefined,
-                  paddingBottom: footer ? 0 : insets.bottom + spacing.lg,
+                  // The inset already clears the gesture bar; adding a margin on top of
+                  // it leaves a dead strip that reads as the sheet floating.
+                  paddingBottom: footer ? 0 : Math.max(insets.bottom, spacing.lg),
                 },
                 elevation(3, colors.shadow, isDark),
               ]}>
@@ -89,7 +91,10 @@ export function BottomSheet({
                 <View
                   style={[
                     styles.footer,
-                    { borderTopColor: colors.border, paddingBottom: insets.bottom + spacing.md },
+                    {
+                      borderTopColor: colors.border,
+                      paddingBottom: Math.max(insets.bottom, spacing.md),
+                    },
                   ]}>
                   {footer}
                 </View>
