@@ -26,6 +26,7 @@ import {
 } from '@/features/attachments/picker';
 import { MAX_ATTACHMENTS_PER_TRANSACTION, type PickedFile } from '@/features/attachments/types';
 import { useCatalog } from '@/features/catalog/hooks';
+import { GroupField } from '@/features/groups/components/group-field';
 import { useSettings } from '@/features/settings/settings-provider';
 import { todayISO } from '@/lib/date';
 import { newId } from '@/lib/id';
@@ -81,6 +82,7 @@ export function TransactionForm({
   const [accountId, setAccountId] = useState<string | null>(
     seed?.accountId ?? settings.defaultAccountId
   );
+  const [groupId, setGroupId] = useState<string | null>(seed?.groupId ?? null);
   const [date, setDate] = useState<string | null>(initial?.date ?? todayISO());
   const [title, setTitle] = useState(seed?.title ?? '');
   const [note, setNote] = useState(seed?.note ?? '');
@@ -176,6 +178,7 @@ export function TransactionForm({
       title: title.trim(),
       note: note.trim() || null,
       date: date!,
+      groupId,
     };
   };
 
@@ -303,6 +306,7 @@ export function TransactionForm({
           onCreate={() => router.push('/manage/accounts/form')}
           createLabel="New account"
         />
+        <GroupField value={groupId} onChange={setGroupId} />
         <DateField label="Date" value={date} onChange={setDate} shortcuts error={errors.date} />
         <TextField
           label="Title"

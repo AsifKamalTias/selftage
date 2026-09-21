@@ -24,6 +24,8 @@ export interface TransactionFilters {
   categoryIds?: string[];
   sourceIds?: string[];
   accountIds?: string[];
+  /** Group ids; the empty string matches entries with no group. */
+  groupIds?: string[];
   /** Minor units, inclusive. */
   minAmount?: number;
   /** Minor units, inclusive. */
@@ -45,6 +47,7 @@ export const transactionInputSchema = z.object({
   title: z.string().trim().max(80, 'Keep the title under 80 characters'),
   note: z.string().trim().max(500, 'Keep the note under 500 characters').nullable(),
   date: z.string().refine(isISODate, 'Choose a valid date'),
+  groupId: z.string().min(1).nullable(),
 });
 
 export type TransactionInput = z.infer<typeof transactionInputSchema>;
@@ -62,7 +65,8 @@ const FROM_JOINS = `
   LEFT JOIN sources s ON s.id = t.source_id
   JOIN accounts a ON a.id = t.account_id
   LEFT JOIN recurring_rules r ON r.id = t.recurring_id
-  LEFT JOIN goals gl ON gl.id = t.goal_id`;
+  LEFT JOIN goals gl ON gl.id = t.goal_id
+  LEFT JOIN groups g ON g.id = t.group_id`;
 
 const SELECT_COLUMNS = `
   t.id, t.kind, t.amount, t.title, t.note, t.date,
@@ -71,6 +75,7 @@ const SELECT_COLUMNS = `
   t.account_id AS accountId, a.name AS accountName,
   t.recurring_id AS recurringId, r.name AS recurringName,
   t.goal_id AS goalId, gl.name AS goalName,
+  t.group_id AS groupId, g.name AS groupName, g.icon AS groupIcon, g.color AS groupColor,
   (SELECT COUNT(*) FROM attachments x WHERE x.transaction_id = t.id) AS attachmentCount,
   t.created_at AS createdAt, t.updated_at AS updatedAt`;
 
@@ -109,6 +114,14 @@ export function buildTransactionWhere(filters: TransactionFilters): {
     clauses.push(inList('t.category_id', filters.categoryIds, params));
   if (filters.sourceIds?.length) clauses.push(inList('t.source_id', filters.sourceIds, params));
   if (filters.accountIds?.length) clauses.push(inList('t.account_id', filters.accountIds, params));
+  if (filters.groupIds?.length) {
+    // The empty string stands for "no group", which no IN list can express.
+    const ids = filters.groupIds.filter((id) => id !== '');
+    const parts: string[] = [];
+    if (ids.length) parts.push(inList('t.group_id', ids, params));
+    if (ids.length !== filters.groupIds.length) parts.push('t.group_id IS NULL');
+    clauses.push(`(${parts.join(' OR ')})`);
+  }
   if (filters.minAmount != null) {
     clauses.push('t.amount >= ?');
     params.push(filters.minAmount);
@@ -124,7 +137,7 @@ export function buildTransactionWhere(filters: TransactionFilters): {
   const term = filters.search?.trim();
   if (term) {
     const like = likePattern(term);
-    const searchable = ['t.title', 't.note', 'c.name', 's.name', 'a.name'];
+    const searchable = ['t.title', 't.note', 'c.name', 's.name', 'a.name', 'g.name'];
     const parts = searchable.map((col) => `${col} LIKE ? ESCAPE '\\'`);
     params.push(...searchable.map(() => like));
     const amount = parseAmountInput(term);
@@ -276,9 +289,9 @@ export async function writeTransaction(
     await assertReferences(tx, input);
     await tx.runAsync(
       `INSERT INTO transactions
-         (id, kind, amount, category_id, source_id, account_id, title, note, date, recurring_id,
-          goal_id, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         (id, kind, amount, category_id, source_id, account_id, title, note, date, group_id,
+          recurring_id, goal_id, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id,
         input.kind,
@@ -289,6 +302,7 @@ export async function writeTransaction(
         input.title,
         input.note,
         input.date,
+        input.groupId,
         recurringId ?? null,
         goalId ?? null,
         now,
@@ -339,7 +353,7 @@ export async function modifyTransaction(
     const now = nowTimestamp();
     await tx.runAsync(
       `UPDATE transactions SET kind = ?, amount = ?, category_id = ?, source_id = ?, account_id = ?,
-         title = ?, note = ?, date = ?, updated_at = ?
+         title = ?, note = ?, date = ?, group_id = ?, updated_at = ?
        WHERE id = ?`,
       [
         input.kind,
@@ -350,6 +364,7 @@ export async function modifyTransaction(
         input.title,
         input.note,
         input.date,
+        input.groupId,
         now,
         id,
       ]

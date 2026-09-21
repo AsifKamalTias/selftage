@@ -1,6 +1,7 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-import type { EntryKind, Transaction } from '@/db/types';
+import type { EntryKind, GroupTotals, Transaction } from '@/db/types';
+import { groupTotals } from '@/features/groups/repository';
 import {
   listTransactions,
   summarizeTransactions,
@@ -61,6 +62,8 @@ export interface DashboardData {
   expenseBySource: BreakdownItem[];
   incomeBySource: BreakdownItem[];
   accounts: AccountActivity[];
+  /** Group-wise totals for the period; entries without a group are reported together. */
+  groups: GroupTotals[];
   recent: Transaction[];
   largestExpenses: Transaction[];
   averageDailyExpense: number;
@@ -166,6 +169,7 @@ export async function getDashboardData(
     expenseBySource,
     incomeBySource,
     accounts,
+    groups,
     recent,
     largestExpenses,
   ] = await Promise.all([
@@ -178,6 +182,7 @@ export async function getDashboardData(
     getBreakdown(db, 'source', 'expense', requested),
     getBreakdown(db, 'source', 'income', requested),
     getAccountActivity(db, requested),
+    groupTotals(db, requested),
     listTransactions(db, {}, { limit: 6 }),
     listTransactions(db, { ...filters, kind: 'expense', sort: 'highest' }, { limit: 5 }),
   ]);
@@ -202,6 +207,7 @@ export async function getDashboardData(
     expenseBySource,
     incomeBySource,
     accounts,
+    groups,
     recent,
     largestExpenses,
     averageDailyExpense: Math.round(totals.expense / elapsedDays),

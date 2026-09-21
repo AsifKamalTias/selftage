@@ -247,6 +247,7 @@ export async function completeGoal(
           title: goal.name,
           note: `Goal completed: ${goal.name}`,
           date,
+          groupId: null,
         },
         [],
         { goalId }

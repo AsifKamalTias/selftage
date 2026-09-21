@@ -193,6 +193,28 @@ ALTER TABLE transactions ADD COLUMN goal_id TEXT REFERENCES goals (id) ON DELETE
 CREATE INDEX idx_transactions_goal ON transactions (goal_id);
 `;
 
+const SCHEMA_V5 = `
+-- Groups tie entries that belong together (a trip, a project, an event) across types,
+-- sources and accounts, so they can be reported on as one.
+CREATE TABLE groups (
+  id TEXT PRIMARY KEY NOT NULL,
+  name TEXT NOT NULL,
+  note TEXT,
+  icon TEXT NOT NULL,
+  color TEXT NOT NULL,
+  is_archived INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE UNIQUE INDEX idx_groups_name ON groups (name COLLATE NOCASE);
+
+-- Deleting a group keeps its entries; they simply stop belonging to one.
+ALTER TABLE transactions ADD COLUMN group_id TEXT REFERENCES groups (id) ON DELETE SET NULL;
+CREATE INDEX idx_transactions_group ON transactions (group_id);
+
+ALTER TABLE recurring_rules ADD COLUMN group_id TEXT REFERENCES groups (id) ON DELETE SET NULL;
+`;
+
 /**
  * Append-only list. Never edit a shipped migration; add a new version instead.
  * Each migration runs in its own transaction together with the version bump.
@@ -221,6 +243,12 @@ const MIGRATIONS: readonly Migration[] = [
     version: 4,
     up: async (tx) => {
       await tx.execAsync(SCHEMA_V4);
+    },
+  },
+  {
+    version: 5,
+    up: async (tx) => {
+      await tx.execAsync(SCHEMA_V5);
     },
   },
 ];

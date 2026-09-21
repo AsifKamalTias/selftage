@@ -124,6 +124,18 @@ export default function TransactionDetailScreen() {
             }
             accessibilityHint="Opens the account ledger"
           />
+          {data.groupId ? (
+            <ListRow
+              icon={data.groupIcon ?? 'albums'}
+              iconColor={data.groupColor ?? undefined}
+              title={data.groupName ?? 'Group'}
+              subtitle="Group"
+              onPress={() =>
+                router.push({ pathname: '/transactions', params: { groupId: data.groupId! } })
+              }
+              accessibilityHint="Opens the entries in this group"
+            />
+          ) : null}
           <ListRow icon="calendar" title={formatDate(data.date)} subtitle="Date" />
           {data.recurringId ? (
             <ListRow

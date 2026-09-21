@@ -101,6 +101,11 @@ export interface Transaction {
   /** Set when the entry is the spend that completed a goal. */
   goalId: string | null;
   goalName: string | null;
+  /** Optional grouping across types, sources and accounts (a trip, a project). */
+  groupId: string | null;
+  groupName: string | null;
+  groupIcon: string | null;
+  groupColor: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -128,6 +133,38 @@ export interface LedgerEntry {
   /** Running balance after this entry within the current ledger view. */
   balance: number;
   createdAt: string;
+}
+
+/** A user-defined bundle of entries that belong together, reported on as one. */
+export interface Group {
+  id: string;
+  name: string;
+  note: string | null;
+  icon: string;
+  color: string;
+  isArchived: boolean;
+  createdAt: string;
+  updatedAt: string;
+  /** Totals across every entry in the group, all time. */
+  income: number;
+  expense: number;
+  /** income − expense. */
+  net: number;
+  transactionCount: number;
+  firstDate: string | null;
+  lastDate: string | null;
+}
+
+/** One row of the group-wise report, scoped to the report's period. */
+export interface GroupTotals {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+  income: number;
+  expense: number;
+  net: number;
+  count: number;
 }
 
 export type GoalStatus = 'active' | 'completed';
@@ -195,6 +232,9 @@ export interface RecurringRule {
   accountId: string;
   accountName: string;
   note: string | null;
+  /** Optional grouping applied to every entry this rule posts. */
+  groupId: string | null;
+  groupName: string | null;
   frequency: RecurrenceFrequency;
   /** Every N periods; 1 = every period. */
   intervalCount: number;

@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -18,6 +18,7 @@ import { Text } from '@/components/ui/text';
 import type { EntryKind, Transaction } from '@/db/types';
 import { useAccounts } from '@/features/accounts/hooks';
 import { useCatalog } from '@/features/catalog/hooks';
+import { useGroups } from '@/features/groups/hooks';
 import { useSettings } from '@/features/settings/settings-provider';
 import {
   activeFilterCount,
@@ -56,18 +57,23 @@ function buildRows(items: Transaction[], grouped: boolean): Row[] {
 }
 
 export default function TransactionsScreen() {
+  // Deep links from a group or report land here pre-filtered.
+  const params = useLocalSearchParams<{ groupId?: string }>();
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const { settings } = useSettings();
   const [kind, setKind] = useState<KindFilter>('all');
   const [search, setSearch] = useState('');
-  const [filters, setFilters] = useState<HistoryFilters>(EMPTY_FILTERS);
+  const [filters, setFilters] = useState<HistoryFilters>(
+    params.groupId ? { ...EMPTY_FILTERS, groupIds: [params.groupId] } : EMPTY_FILTERS
+  );
   const [sheetOpen, setSheetOpen] = useState(false);
   const debouncedSearch = useDebouncedValue(search);
 
   const accounts = useAccounts();
   const categories = useCatalog('categories');
   const sources = useCatalog('sources');
+  const groups = useGroups();
 
   const range = resolveRange(filters, settings.weekStartsOn);
   const query: TransactionFilters = {
@@ -78,6 +84,7 @@ export default function TransactionsScreen() {
     categoryIds: filters.categoryIds,
     sourceIds: filters.sourceIds,
     accountIds: filters.accountIds,
+    groupIds: filters.groupIds,
     minAmount: filters.minAmount,
     maxAmount: filters.maxAmount,
     withAttachments: filters.withAttachments || undefined,
@@ -128,6 +135,14 @@ export default function TransactionsScreen() {
       label: nameOf(sources.data, id),
       onRemove: () =>
         setFilters({ ...filters, sourceIds: filters.sourceIds.filter((x) => x !== id) }),
+    });
+  }
+  for (const id of filters.groupIds) {
+    chips.push({
+      key: `g-${id}`,
+      label: id === '' ? 'No group' : nameOf(groups.data, id),
+      onRemove: () =>
+        setFilters({ ...filters, groupIds: filters.groupIds.filter((x) => x !== id) }),
     });
   }
   if (filters.minAmount != null || filters.maxAmount != null) {

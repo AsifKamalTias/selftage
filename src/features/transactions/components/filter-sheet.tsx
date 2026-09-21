@@ -10,6 +10,7 @@ import { TextField } from '@/components/ui/text-field';
 import type { EntryKind } from '@/db/types';
 import { useAccounts } from '@/features/accounts/hooks';
 import { useCatalog } from '@/features/catalog/hooks';
+import { useGroups } from '@/features/groups/hooks';
 import { useSettings } from '@/features/settings/settings-provider';
 import { PERIOD_PRESETS, rangeForPreset, type PeriodPreset, type WeekStart } from '@/lib/date';
 import { minorToInput, parseAmountInput, sanitizeAmountInput } from '@/lib/money';
@@ -24,6 +25,8 @@ export interface HistoryFilters {
   categoryIds: string[];
   sourceIds: string[];
   accountIds: string[];
+  /** Group ids; the empty string selects entries with no group. */
+  groupIds: string[];
   minAmount?: number;
   maxAmount?: number;
   withAttachments: boolean;
@@ -35,6 +38,7 @@ export const EMPTY_FILTERS: HistoryFilters = {
   categoryIds: [],
   sourceIds: [],
   accountIds: [],
+  groupIds: [],
   withAttachments: false,
   sort: 'newest',
 };
@@ -45,6 +49,7 @@ export function activeFilterCount(filters: HistoryFilters): number {
     filters.categoryIds.length +
     filters.sourceIds.length +
     filters.accountIds.length +
+    filters.groupIds.length +
     (filters.minAmount != null || filters.maxAmount != null ? 1 : 0) +
     (filters.withAttachments ? 1 : 0) +
     (filters.sort !== 'newest' ? 1 : 0)
@@ -109,6 +114,7 @@ export function FilterSheet({
   const accounts = useAccounts();
   const categories = useCatalog('categories', kind);
   const sources = useCatalog('sources', kind);
+  const groups = useGroups();
 
   const apply = () => {
     const min = parseAmountInput(minText) ?? undefined;
@@ -235,6 +241,27 @@ export function FilterSheet({
             />
           ))}
         </Group>
+
+        {(groups.data ?? []).length > 0 ? (
+          <Group title="Groups">
+            {(groups.data ?? []).map((g) => (
+              <Chip
+                key={g.id}
+                label={g.name}
+                icon={g.icon}
+                color={g.color}
+                selected={draft.groupIds.includes(g.id)}
+                onPress={() => setDraft({ ...draft, groupIds: toggle(draft.groupIds, g.id) })}
+              />
+            ))}
+            <Chip
+              label="No group"
+              icon="ellipsis-horizontal"
+              selected={draft.groupIds.includes('')}
+              onPress={() => setDraft({ ...draft, groupIds: toggle(draft.groupIds, '') })}
+            />
+          </Group>
+        ) : null}
 
         <View style={styles.group}>
           <Text variant="label" color="textSecondary" uppercase>

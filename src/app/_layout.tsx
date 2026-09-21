@@ -140,6 +140,8 @@ function RootStack() {
       <Stack.Screen name="manage/types/form" options={{ presentation: modal, title: 'Type' }} />
       <Stack.Screen name="manage/sources/index" options={{ title: 'Sources' }} />
       <Stack.Screen name="manage/sources/form" options={{ presentation: modal, title: 'Source' }} />
+      <Stack.Screen name="manage/groups/index" options={{ title: 'Groups' }} />
+      <Stack.Screen name="manage/groups/form" options={{ presentation: modal, title: 'Group' }} />
       <Stack.Screen name="manage/accounts/index" options={{ title: 'Accounts' }} />
       <Stack.Screen
         name="manage/accounts/form"
@@ -151,6 +153,7 @@ function RootStack() {
         options={{ presentation: modal, title: 'Account type' }}
       />
       <Stack.Screen name="reports/ledger" options={{ title: 'Ledger report' }} />
+      <Stack.Screen name="reports/groups" options={{ title: 'Group report' }} />
       <Stack.Screen name="currency" options={{ title: 'Currency' }} />
     </Stack>
   );

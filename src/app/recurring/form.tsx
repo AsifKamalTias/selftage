@@ -23,6 +23,7 @@ import {
   type RecurringRule,
 } from '@/db/types';
 import { useAccounts } from '@/features/accounts/hooks';
+import { GroupField } from '@/features/groups/components/group-field';
 import { useCatalog } from '@/features/catalog/hooks';
 import {
   useDeleteRecurringRule,
@@ -74,6 +75,7 @@ function RecurringForm({ existing }: { existing: RecurringRule | null }) {
   const [frequency, setFrequency] = useState<RecurrenceFrequency>(existing?.frequency ?? 'monthly');
   const [intervalCount, setIntervalCount] = useState(existing?.intervalCount ?? 1);
   const [startDate, setStartDate] = useState<string | null>(existing?.startDate ?? todayISO());
+  const [groupId, setGroupId] = useState<string | null>(existing?.groupId ?? null);
   const [note, setNote] = useState(existing?.note ?? '');
   const [errors, setErrors] = useState<{
     name?: string;
@@ -128,6 +130,7 @@ function RecurringForm({ existing }: { existing: RecurringRule | null }) {
           sourceId,
           accountId: accountId!,
           note: note.trim() || null,
+          groupId,
           frequency,
           intervalCount,
           startDate: startDate!,
@@ -270,6 +273,12 @@ function RecurringForm({ existing }: { existing: RecurringRule | null }) {
           setErrors((e) => ({ ...e, accountId: undefined }));
         }}
         error={errors.accountId}
+      />
+
+      <GroupField
+        value={groupId}
+        onChange={setGroupId}
+        hint="Group every entry this posts (optional)"
       />
 
       <View style={styles.group}>

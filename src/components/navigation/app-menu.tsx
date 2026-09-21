@@ -14,6 +14,7 @@ import { useAccounts, useAccountTypes } from '@/features/accounts/hooks';
 import { useBudgetStatuses } from '@/features/budgets/hooks';
 import { useCatalog } from '@/features/catalog/hooks';
 import { useGoals } from '@/features/goals/hooks';
+import { useGroups } from '@/features/groups/hooks';
 import { useRecurringRules } from '@/features/recurring/hooks';
 import { useTheme } from '@/theme/theme-provider';
 import { brandGradient, elevation, radius, spacing } from '@/theme/tokens';
@@ -91,6 +92,7 @@ function AppMenu({ visible, onClose }: { visible: boolean; onClose: () => void }
   const budgets = useBudgetStatuses({ includeInactive: true });
   const recurring = useRecurringRules();
   const goals = useGoals();
+  const groupList = useGroups({ includeArchived: false });
 
   const count = (value: number | undefined, one: string, many = `${one}s`) =>
     value == null ? '—' : `${value} ${value === 1 ? one : many}`;
@@ -150,6 +152,15 @@ function AppMenu({ visible, onClose }: { visible: boolean; onClose: () => void }
           href: '/manage/account-types',
         },
         {
+          icon: 'albums-outline',
+          color: '#F59E0B',
+          title: 'Groups',
+          subtitle: groupList.data?.length
+            ? count(groupList.data.length, 'group')
+            : 'Bundle a trip or project',
+          href: '/manage/groups',
+        },
+        {
           icon: 'pricetags-outline',
           color: '#F97316',
           title: 'Income & expense types',
@@ -174,6 +185,13 @@ function AppMenu({ visible, onClose }: { visible: boolean; onClose: () => void }
           title: 'Ledger report',
           subtitle: 'Statements, PDF and CSV',
           href: '/reports/ledger',
+        },
+        {
+          icon: 'pie-chart-outline',
+          color: '#F59E0B',
+          title: 'Group report',
+          subtitle: 'What each group adds up to',
+          href: '/reports/groups',
         },
       ],
     },

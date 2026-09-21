@@ -52,6 +52,7 @@ async function postOccurrences(
         title: rule.name,
         note: rule.note,
         date,
+        groupId: rule.groupId,
       },
       [],
       { recurringId: rule.id }

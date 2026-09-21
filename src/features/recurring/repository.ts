@@ -17,6 +17,7 @@ export const recurringInputSchema = z.object({
   /** Account the money is taken from (expense) or added to (income). */
   accountId: z.string().min(1, 'Choose an account'),
   note: z.string().trim().max(500, 'Keep the note under 500 characters').nullable(),
+  groupId: z.string().min(1).nullable(),
   frequency: z.enum(['daily', 'weekly', 'monthly', 'yearly']),
   intervalCount: z.number().int().min(1, 'Repeat at least every 1').max(MAX_INTERVAL),
   startDate: z.string().refine(isISODate, 'Choose a valid start date'),
@@ -30,6 +31,7 @@ const SELECT_COLUMNS = `
   c.color AS categoryColor,
   r.source_id AS sourceId, s.name AS sourceName,
   r.account_id AS accountId, a.name AS accountName,
+  r.group_id AS groupId, g.name AS groupName,
   r.frequency, r.interval_count AS intervalCount, r.start_date AS startDate,
   r.next_date AS nextDate, r.last_run_date AS lastRunDate, r.is_active AS isActive,
   r.created_at AS createdAt, r.updated_at AS updatedAt`;
@@ -38,7 +40,8 @@ const FROM_JOINS = `
   FROM recurring_rules r
   JOIN categories c ON c.id = r.category_id
   LEFT JOIN sources s ON s.id = r.source_id
-  JOIN accounts a ON a.id = r.account_id`;
+  JOIN accounts a ON a.id = r.account_id
+  LEFT JOIN groups g ON g.id = r.group_id`;
 
 type RecurringRow = Omit<RecurringRule, 'isActive'> & { isActive: number };
 
@@ -118,9 +121,9 @@ export async function createRecurringRule(
   const now = nowTimestamp();
   await db.runAsync(
     `INSERT INTO recurring_rules
-       (id, kind, name, amount, category_id, source_id, account_id, note, frequency,
+       (id, kind, name, amount, category_id, source_id, account_id, note, group_id, frequency,
         interval_count, start_date, next_date, last_run_date, is_active, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, 1, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, 1, ?, ?)`,
     [
       id,
       data.kind,
@@ -130,6 +133,7 @@ export async function createRecurringRule(
       data.sourceId,
       data.accountId,
       data.note,
+      data.groupId,
       data.frequency,
       data.intervalCount,
       data.startDate,
@@ -165,8 +169,8 @@ export async function updateRecurringRule(
   await db.runAsync(
     `UPDATE recurring_rules
        SET kind = ?, name = ?, amount = ?, category_id = ?, source_id = ?, account_id = ?,
-           note = ?, frequency = ?, interval_count = ?, start_date = ?, next_date = ?,
-           updated_at = ?
+           note = ?, group_id = ?, frequency = ?, interval_count = ?, start_date = ?,
+           next_date = ?, updated_at = ?
      WHERE id = ?`,
     [
       data.kind,
@@ -176,6 +180,7 @@ export async function updateRecurringRule(
       data.sourceId,
       data.accountId,
       data.note,
+      data.groupId,
       data.frequency,
       data.intervalCount,
       data.startDate,
