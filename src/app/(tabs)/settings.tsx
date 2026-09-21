@@ -1,7 +1,7 @@
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { FlatList, Platform, StyleSheet, View } from 'react-native';
+import { FlatList, StyleSheet, View } from 'react-native';
 
 import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { Card } from '@/components/ui/card';
@@ -20,7 +20,11 @@ import { TextField } from '@/components/ui/text-field';
 import { useToast } from '@/components/ui/toast';
 import { useAccounts } from '@/features/accounts/hooks';
 import { formatReminderTime } from '@/features/notifications/reminders';
-import { requestReminderPermission } from '@/features/notifications/scheduler';
+import {
+  remindersAvailable,
+  remindersUnavailableReason,
+  requestReminderPermission,
+} from '@/features/notifications/scheduler';
 import { useExportTransactions, useResetAllData } from '@/features/settings/hooks';
 import { useSettings } from '@/features/settings/settings-provider';
 import type { ThemeMode } from '@/features/settings/settings';
@@ -194,8 +198,8 @@ export default function SettingsScreen() {
   const exportTransactions = useExportTransactions();
   const reset = useResetAllData();
 
-  // A browser tab cannot wake itself to fire a reminder.
-  const remindersSupported = Platform.OS !== 'web';
+  // Web cannot schedule them at all, and Expo Go refuses to load the module.
+  const remindersSupported = remindersAvailable;
 
   const toggleReminders = async () => {
     if (settings.notificationsEnabled) {
@@ -330,7 +334,7 @@ export default function SettingsScreen() {
         caption={
           remindersSupported
             ? 'Reminders for what is due, on this device only'
-            : 'Reminders need the iOS or Android app'
+            : (remindersUnavailableReason ?? 'Reminders are unavailable here')
         }>
         <ListGroup>
           <ListRow
@@ -339,9 +343,9 @@ export default function SettingsScreen() {
             subtitle={
               remindersSupported
                 ? settings.notificationsEnabled
-                  ? 'On'
+                  ? `Announced at ${formatReminderTime(settings.notificationTime)}`
                   : 'Off'
-                : 'Not available in the browser'
+                : (remindersUnavailableReason ?? 'Unavailable')
             }
             value={remindersSupported ? (settings.notificationsEnabled ? 'On' : 'Off') : '—'}
             disabled={!remindersSupported}
