@@ -8,9 +8,11 @@
     "scheme": "selftage",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.selftage.app"
     },
     "android": {
+      "package": "com.selftage.app",
       "adaptiveIcon": {
         "backgroundColor": "#6366F1",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
