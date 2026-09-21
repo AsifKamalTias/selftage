@@ -2,6 +2,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { IconButton } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Icon } from '@/components/ui/icon';
 import { PressableScale } from '@/components/ui/pressable-scale';
 import { Text } from '@/components/ui/text';
 import { parseISODate, todayISO, type WeekStart } from '@/lib/date';
@@ -103,6 +104,7 @@ export function MonthGrid({
   weekStartsOn,
   onSelect,
   onChangeMonth,
+  onPickMonth,
 }: {
   monthStart: Date;
   days: CalendarDay[];
@@ -110,6 +112,8 @@ export function MonthGrid({
   weekStartsOn: WeekStart;
   onSelect: (date: string) => void;
   onChangeMonth: (delta: number) => void;
+  /** Opens the month and year picker, so far-away months take one step. */
+  onPickMonth: () => void;
 }) {
   const { colors } = useTheme();
   const today = todayISO();
@@ -135,9 +139,20 @@ export function MonthGrid({
           accessibilityLabel="Previous month"
           onPress={() => onChangeMonth(-1)}
         />
-        <Text variant="subheading" weight="semibold">
-          {monthStart.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
-        </Text>
+        <PressableScale
+          scaleTo={0.96}
+          onPress={onPickMonth}
+          style={[styles.title, { backgroundColor: colors.surfaceMuted }]}
+          accessibilityRole="button"
+          accessibilityLabel={`${monthStart.toLocaleDateString(undefined, {
+            month: 'long',
+            year: 'numeric',
+          })}, choose a different month`}>
+          <Text variant="subheading" weight="semibold">
+            {monthStart.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
+          </Text>
+          <Icon name="chevron-down" size={14} color="textSecondary" />
+        </PressableScale>
         <IconButton
           icon="chevron-forward"
           variant="plain"
@@ -196,6 +211,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  title: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs + 2,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.pill,
   },
   weekdays: {
     flexDirection: 'row',

@@ -15,6 +15,7 @@ import { Section } from '@/components/ui/section';
 import { Text } from '@/components/ui/text';
 import { BudgetProgressCard } from '@/features/budgets/components/budget-progress-card';
 import { MonthGrid } from '@/features/calendar/components/month-grid';
+import { MonthPickerSheet } from '@/features/calendar/components/month-picker-sheet';
 import { useDayReport, useMonthTotals } from '@/features/calendar/hooks';
 import type { ScheduledEntry } from '@/features/calendar/repository';
 import { DueList } from '@/features/recurring/components/due-list';
@@ -87,6 +88,7 @@ export default function CalendarScreen() {
   const { settings } = useSettings();
   const [selected, setSelected] = useState(todayISO());
   const [monthStart, setMonthStart] = useState(() => startOfMonth(new Date()));
+  const [pickingMonth, setPickingMonth] = useState(false);
 
   const range = {
     from: toISODate(startOfMonth(monthStart)),
@@ -96,8 +98,7 @@ export default function CalendarScreen() {
   const day = useDayReport(selected);
   const report = day.data;
 
-  const changeMonth = (delta: number) => {
-    const next = startOfMonth(addMonths(monthStart, delta));
+  const showMonth = (next: Date) => {
     setMonthStart(next);
     // Keep a selection inside the month on view: the 1st, or today for the current month.
     const today = todayISO();
@@ -107,6 +108,8 @@ export default function CalendarScreen() {
       setSelected(today >= first && today <= last ? today : first);
     }
   };
+
+  const changeMonth = (delta: number) => showMonth(startOfMonth(addMonths(monthStart, delta)));
 
   const jumpToToday = () => {
     setMonthStart(startOfMonth(new Date()));
@@ -138,6 +141,14 @@ export default function CalendarScreen() {
         weekStartsOn={settings.weekStartsOn}
         onSelect={setSelected}
         onChangeMonth={changeMonth}
+        onPickMonth={() => setPickingMonth(true)}
+      />
+
+      <MonthPickerSheet
+        visible={pickingMonth}
+        monthStart={monthStart}
+        onClose={() => setPickingMonth(false)}
+        onSelect={showMonth}
       />
 
       <Card muted elevated={false} style={styles.monthTotals}>
