@@ -130,6 +130,15 @@ function RootStack() {
       />
       <Stack.Screen name="transaction/[id]/index" options={{ title: 'Transaction' }} />
       <Stack.Screen name="calendar" options={{ title: 'Calendar' }} />
+      <Stack.Screen name="outstanding/index" options={{ title: 'Outstanding' }} />
+      <Stack.Screen name="outstanding/[id]" options={{ title: 'Record' }} />
+      <Stack.Screen
+        name="outstanding/form"
+        options={{ presentation: modal, title: 'Outstanding' }}
+      />
+      <Stack.Screen name="contacts/index" options={{ title: 'Contacts' }} />
+      <Stack.Screen name="contacts/[id]" options={{ title: 'Contact' }} />
+      <Stack.Screen name="contacts/form" options={{ presentation: modal, title: 'Contact' }} />
       <Stack.Screen name="goals/index" options={{ title: 'Goals' }} />
       <Stack.Screen name="goals/[id]" options={{ title: 'Goal' }} />
       <Stack.Screen name="goals/form" options={{ presentation: modal, title: 'Goal' }} />

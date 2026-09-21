@@ -106,6 +106,11 @@ export interface Transaction {
   groupName: string | null;
   groupIcon: string | null;
   groupColor: string | null;
+  /** Set when the entry settles an outstanding payable or receivable. */
+  obligationId: string | null;
+  obligationTitle: string | null;
+  contactName: string | null;
+  installmentId: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -279,6 +284,67 @@ export interface RecurringOccurrence {
   accountName: string;
   groupId: string | null;
   note: string | null;
+}
+
+/** Someone money is owed to, or by. */
+export interface Contact {
+  id: string;
+  name: string;
+  photoUri: string | null;
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+  note: string | null;
+  createdAt: string;
+  updatedAt: string;
+  /** Still outstanding, across this contact's obligations. */
+  receivable: number;
+  payable: number;
+  /** receivable − payable: positive means they owe the user. */
+  net: number;
+  obligationCount: number;
+  openCount: number;
+}
+
+/** A receivable is owed to the user; a payable is owed by them. */
+export type ObligationDirection = 'receivable' | 'payable';
+
+export interface Obligation {
+  id: string;
+  contactId: string;
+  contactName: string;
+  contactPhotoUri: string | null;
+  direction: ObligationDirection;
+  title: string;
+  amount: number;
+  date: string;
+  dueDate: string | null;
+  note: string | null;
+  createdAt: string;
+  updatedAt: string;
+  /** Sum of the transactions that settle it. */
+  settled: number;
+  /** amount − settled, never below zero. */
+  remaining: number;
+  isSettled: boolean;
+  /** Date of the last settlement, so a closed record can say when. */
+  lastPaymentDate: string | null;
+  paymentCount: number;
+  installmentCount: number;
+  paidInstallments: number;
+}
+
+export interface Installment {
+  id: string;
+  obligationId: string;
+  sequence: number;
+  dueDate: string;
+  amount: number;
+  createdAt: string;
+  /** The settling transaction, when this installment has been paid. */
+  transactionId: string | null;
+  paidAmount: number | null;
+  paidDate: string | null;
 }
 
 export type BudgetPeriod = 'daily' | 'weekly' | 'monthly';

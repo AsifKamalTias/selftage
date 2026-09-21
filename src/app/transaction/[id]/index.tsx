@@ -136,6 +136,26 @@ export default function TransactionDetailScreen() {
               accessibilityHint="Opens the entries in this group"
             />
           ) : null}
+          {data.obligationId ? (
+            <ListRow
+              icon="reader"
+              title={data.obligationTitle ?? 'Outstanding record'}
+              subtitle={
+                data.contactName
+                  ? `Settles what ${data.contactName} ${
+                      data.kind === 'income' ? 'owed you' : 'you owed'
+                    }`
+                  : 'Settles an outstanding record'
+              }
+              onPress={() =>
+                router.push({
+                  pathname: '/outstanding/[id]',
+                  params: { id: data.obligationId! },
+                })
+              }
+              accessibilityHint="Opens the outstanding record"
+            />
+          ) : null}
           <ListRow icon="calendar" title={formatDate(data.date)} subtitle="Date" />
           {data.recurringId ? (
             <ListRow

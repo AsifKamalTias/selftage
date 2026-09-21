@@ -10,6 +10,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Icon } from '@/components/ui/icon';
 import { IconBadge } from '@/components/ui/icon-badge';
 import { ListSkeleton } from '@/components/ui/loader';
+import { PressableScale } from '@/components/ui/pressable-scale';
 import { Screen } from '@/components/ui/screen';
 import { Section } from '@/components/ui/section';
 import { Text } from '@/components/ui/text';
@@ -18,6 +19,7 @@ import { MonthGrid } from '@/features/calendar/components/month-grid';
 import { MonthPickerSheet } from '@/features/calendar/components/month-picker-sheet';
 import { useDayReport, useMonthTotals } from '@/features/calendar/hooks';
 import type { ScheduledEntry } from '@/features/calendar/repository';
+import { ObligationCard } from '@/features/outstanding/components/obligation-card';
 import { DueList } from '@/features/recurring/components/due-list';
 import { useSettings } from '@/features/settings/settings-provider';
 import { TransactionRow } from '@/features/transactions/components/transaction-row';
@@ -249,6 +251,51 @@ export default function CalendarScreen() {
             </Section>
           ) : null}
 
+          {report.obligationsDue.length > 0 || report.installmentsDue.length > 0 ? (
+            <Section title="Due on this day" caption="What you owe or are owed on this date">
+              <View style={styles.due}>
+                {report.obligationsDue.map((item) => (
+                  <ObligationCard key={item.id} obligation={item} />
+                ))}
+                {report.installmentsDue.map((item) => (
+                  <PressableScale
+                    key={item.id}
+                    onPress={() =>
+                      router.push({
+                        pathname: '/outstanding/[id]',
+                        params: { id: item.obligationId },
+                      })
+                    }
+                    accessibilityLabel={`${item.title}, installment ${item.sequence}`}>
+                    <Card style={styles.installmentRow}>
+                      <IconBadge
+                        icon={item.transactionId ? 'checkmark' : 'hourglass-outline'}
+                        color={item.transactionId ? colors.income : colors.warning}
+                        size={36}
+                      />
+                      <View style={styles.scheduledText}>
+                        <Text variant="callout" weight="medium" numberOfLines={1}>
+                          {item.title} · installment {item.sequence}
+                        </Text>
+                        <Text variant="micro" color="textMuted" numberOfLines={1}>
+                          {item.contactName} ·{' '}
+                          {item.transactionId ? 'settled' : 'waiting to be settled'}
+                        </Text>
+                      </View>
+                      <Amount
+                        value={item.direction === 'receivable' ? item.amount : -item.amount}
+                        variant="callout"
+                        weight="semibold"
+                        signed
+                        colorize
+                      />
+                    </Card>
+                  </PressableScale>
+                ))}
+              </View>
+            </Section>
+          ) : null}
+
           {report.budgets.length > 0 ? (
             <Section title="Budgets" caption="Windows that cover this day">
               <View style={styles.budgets}>
@@ -341,6 +388,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scheduled: {
+    gap: spacing.md,
+  },
+  due: {
+    gap: spacing.md,
+  },
+  installmentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.md,
   },
   scheduledRow: {

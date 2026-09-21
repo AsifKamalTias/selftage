@@ -236,6 +236,60 @@ CREATE UNIQUE INDEX idx_recurring_occurrences_due ON recurring_occurrences (rule
 CREATE INDEX idx_recurring_occurrences_pending ON recurring_occurrences (status, due_date);
 `;
 
+const SCHEMA_V7 = `
+-- People money is owed to or by.
+CREATE TABLE contacts (
+  id TEXT PRIMARY KEY NOT NULL,
+  name TEXT NOT NULL,
+  photo_uri TEXT,
+  phone TEXT,
+  email TEXT,
+  address TEXT,
+  note TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE UNIQUE INDEX idx_contacts_name ON contacts (name COLLATE NOCASE);
+
+-- A receivable is owed to the user, a payable is owed by them. What is still
+-- outstanding is derived from the settlements, never stored.
+CREATE TABLE obligations (
+  id TEXT PRIMARY KEY NOT NULL,
+  contact_id TEXT NOT NULL REFERENCES contacts (id) ON DELETE CASCADE,
+  direction TEXT NOT NULL CHECK (direction IN ('receivable', 'payable')),
+  title TEXT NOT NULL,
+  amount INTEGER NOT NULL CHECK (amount > 0),
+  date TEXT NOT NULL,
+  due_date TEXT,
+  note TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE INDEX idx_obligations_contact ON obligations (contact_id);
+CREATE INDEX idx_obligations_due ON obligations (due_date);
+
+-- An optional schedule. An installment is paid when a transaction points at it.
+CREATE TABLE obligation_installments (
+  id TEXT PRIMARY KEY NOT NULL,
+  obligation_id TEXT NOT NULL REFERENCES obligations (id) ON DELETE CASCADE,
+  sequence INTEGER NOT NULL,
+  due_date TEXT NOT NULL,
+  amount INTEGER NOT NULL CHECK (amount > 0),
+  created_at TEXT NOT NULL
+);
+CREATE UNIQUE INDEX idx_installments_sequence ON obligation_installments (obligation_id, sequence);
+CREATE INDEX idx_installments_due ON obligation_installments (due_date);
+
+-- Settlements are ordinary transactions, so they post to the ledger and show up in
+-- history and the calendar like anything else. Deleting one un-settles that much.
+ALTER TABLE transactions ADD COLUMN obligation_id TEXT REFERENCES obligations (id) ON DELETE SET NULL;
+ALTER TABLE transactions ADD COLUMN installment_id TEXT
+  REFERENCES obligation_installments (id) ON DELETE SET NULL;
+CREATE INDEX idx_transactions_obligation ON transactions (obligation_id);
+CREATE UNIQUE INDEX idx_transactions_installment ON transactions (installment_id)
+  WHERE installment_id IS NOT NULL;
+`;
+
 /**
  * Append-only list. Never edit a shipped migration; add a new version instead.
  * Each migration runs in its own transaction together with the version bump.
@@ -276,6 +330,12 @@ const MIGRATIONS: readonly Migration[] = [
     version: 6,
     up: async (tx) => {
       await tx.execAsync(SCHEMA_V6);
+    },
+  },
+  {
+    version: 7,
+    up: async (tx) => {
+      await tx.execAsync(SCHEMA_V7);
     },
   },
 ];

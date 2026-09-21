@@ -26,6 +26,8 @@ export interface TransactionFilters {
   accountIds?: string[];
   /** Group ids; the empty string matches entries with no group. */
   groupIds?: string[];
+  /** Only entries that settle this outstanding record. */
+  obligationId?: string;
   /** Minor units, inclusive. */
   minAmount?: number;
   /** Minor units, inclusive. */
@@ -66,7 +68,9 @@ const FROM_JOINS = `
   JOIN accounts a ON a.id = t.account_id
   LEFT JOIN recurring_rules r ON r.id = t.recurring_id
   LEFT JOIN goals gl ON gl.id = t.goal_id
-  LEFT JOIN groups g ON g.id = t.group_id`;
+  LEFT JOIN groups g ON g.id = t.group_id
+  LEFT JOIN obligations ob ON ob.id = t.obligation_id
+  LEFT JOIN contacts ct ON ct.id = ob.contact_id`;
 
 const SELECT_COLUMNS = `
   t.id, t.kind, t.amount, t.title, t.note, t.date,
@@ -76,6 +80,8 @@ const SELECT_COLUMNS = `
   t.recurring_id AS recurringId, r.name AS recurringName,
   t.goal_id AS goalId, gl.name AS goalName,
   t.group_id AS groupId, g.name AS groupName, g.icon AS groupIcon, g.color AS groupColor,
+  t.obligation_id AS obligationId, ob.title AS obligationTitle, ct.name AS contactName,
+  t.installment_id AS installmentId,
   (SELECT COUNT(*) FROM attachments x WHERE x.transaction_id = t.id) AS attachmentCount,
   t.created_at AS createdAt, t.updated_at AS updatedAt`;
 
@@ -121,6 +127,10 @@ export function buildTransactionWhere(filters: TransactionFilters): {
     if (ids.length) parts.push(inList('t.group_id', ids, params));
     if (ids.length !== filters.groupIds.length) parts.push('t.group_id IS NULL');
     clauses.push(`(${parts.join(' OR ')})`);
+  }
+  if (filters.obligationId) {
+    clauses.push('t.obligation_id = ?');
+    params.push(filters.obligationId);
   }
   if (filters.minAmount != null) {
     clauses.push('t.amount >= ?');
@@ -269,6 +279,10 @@ export interface TransactionOrigin {
   recurringId?: string;
   /** Set when this entry is the spend that completed a goal. */
   goalId?: string;
+  /** Set when this entry settles an outstanding payable or receivable. */
+  obligationId?: string;
+  /** Set when the settlement clears one installment of that record. */
+  installmentId?: string;
 }
 
 /**
@@ -281,7 +295,7 @@ export async function writeTransaction(
   id: string,
   input: TransactionInput,
   attachments: NewAttachment[],
-  { recurringId, goalId }: TransactionOrigin = {}
+  { recurringId, goalId, obligationId, installmentId }: TransactionOrigin = {}
 ): Promise<void> {
   const now = nowTimestamp();
   const [debit, credit] = ledgerAmounts(input);
@@ -290,8 +304,8 @@ export async function writeTransaction(
     await tx.runAsync(
       `INSERT INTO transactions
          (id, kind, amount, category_id, source_id, account_id, title, note, date, group_id,
-          recurring_id, goal_id, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          recurring_id, goal_id, obligation_id, installment_id, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id,
         input.kind,
@@ -305,6 +319,8 @@ export async function writeTransaction(
         input.groupId,
         recurringId ?? null,
         goalId ?? null,
+        obligationId ?? null,
+        installmentId ?? null,
         now,
         now,
       ]

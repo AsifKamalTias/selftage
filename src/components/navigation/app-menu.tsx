@@ -15,6 +15,7 @@ import { useBudgetStatuses } from '@/features/budgets/hooks';
 import { useCatalog } from '@/features/catalog/hooks';
 import { useGoals } from '@/features/goals/hooks';
 import { useGroups } from '@/features/groups/hooks';
+import { useOutstandingSummary } from '@/features/outstanding/hooks';
 import { useRecurringRules } from '@/features/recurring/hooks';
 import { useTheme } from '@/theme/theme-provider';
 import { brandGradient, elevation, radius, spacing } from '@/theme/tokens';
@@ -93,6 +94,7 @@ function AppMenu({ visible, onClose }: { visible: boolean; onClose: () => void }
   const recurring = useRecurringRules();
   const goals = useGoals();
   const groupList = useGroups({ includeArchived: false });
+  const outstanding = useOutstandingSummary();
 
   const count = (value: number | undefined, one: string, many = `${one}s`) =>
     value == null ? '—' : `${value} ${value === 1 ? one : many}`;
@@ -129,6 +131,17 @@ function AppMenu({ visible, onClose }: { visible: boolean; onClose: () => void }
             ? `${activeGoals} in progress of ${goals.data.length}`
             : 'Save towards a target',
           href: '/goals',
+        },
+        {
+          icon: 'reader-outline',
+          color: '#F43F5E',
+          title: 'Outstanding',
+          subtitle: outstanding.data?.openCount
+            ? `${outstanding.data.openCount} open${
+                outstanding.data.overdueCount ? ` · ${outstanding.data.overdueCount} overdue` : ''
+              }`
+            : 'What you owe and are owed',
+          href: '/outstanding',
         },
         {
           icon: 'repeat',
@@ -173,6 +186,13 @@ function AppMenu({ visible, onClose }: { visible: boolean; onClose: () => void }
           title: 'Income & expense types',
           subtitle: count(categories.data?.length, 'type'),
           href: '/manage/types',
+        },
+        {
+          icon: 'person-circle-outline',
+          color: '#F43F5E',
+          title: 'Contacts',
+          subtitle: 'People you owe or are owed',
+          href: '/contacts',
         },
         {
           icon: 'people-outline',

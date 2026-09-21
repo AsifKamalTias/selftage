@@ -1,7 +1,16 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-import type { BudgetStatus, RecurrenceMode, RecurringOccurrence, Transaction } from '@/db/types';
+import type {
+  BudgetStatus,
+  Installment,
+  Obligation,
+  ObligationDirection,
+  RecurrenceMode,
+  RecurringOccurrence,
+  Transaction,
+} from '@/db/types';
 import { listBudgetStatuses } from '@/features/budgets/repository';
+import { listInstallmentsDue, listObligationsDue } from '@/features/outstanding/repository';
 import { listPendingOccurrences } from '@/features/recurring/occurrences';
 import { listRecurringRules } from '@/features/recurring/repository';
 import { occursOn } from '@/features/recurring/schedule';
@@ -59,6 +68,14 @@ export interface DayReport {
   scheduled: ScheduledEntry[];
   /** Budgets whose window contains the day, resolved against that window's spending. */
   budgets: BudgetStatus[];
+  /** Outstanding records whose own due date is this day and are not settled. */
+  obligationsDue: Obligation[];
+  /** Installments scheduled for this day, paid or not. */
+  installmentsDue: (Installment & {
+    title: string;
+    contactName: string;
+    direction: ObligationDirection;
+  })[];
 }
 
 /** Everything that happened, is waiting, or is expected on one day. */
@@ -67,12 +84,15 @@ export async function getDayReport(
   date: string,
   weekStartsOn: WeekStart
 ): Promise<DayReport> {
-  const [transactions, pendingAll, rules, budgets] = await Promise.all([
-    listTransactions(db, { from: date, to: date, sort: 'newest' }, { limit: 200 }),
-    listPendingOccurrences(db),
-    listRecurringRules(db, { includeInactive: false }),
-    listBudgetStatuses(db, { weekStartsOn, now: parseISODate(date) }),
-  ]);
+  const [transactions, pendingAll, rules, budgets, obligationsDue, installmentsDue] =
+    await Promise.all([
+      listTransactions(db, { from: date, to: date, sort: 'newest' }, { limit: 200 }),
+      listPendingOccurrences(db),
+      listRecurringRules(db, { includeInactive: false }),
+      listBudgetStatuses(db, { weekStartsOn, now: parseISODate(date) }),
+      listObligationsDue(db, date),
+      listInstallmentsDue(db, date),
+    ]);
 
   const income = transactions
     .filter((t) => t.kind === 'income')
@@ -111,5 +131,7 @@ export async function getDayReport(
     pending,
     scheduled,
     budgets,
+    obligationsDue,
+    installmentsDue,
   };
 }
